@@ -1,8 +1,9 @@
 #include <iostream>
 #include "Game.h"
 
-void error(const char *msg) {
+bool error(const char *msg) {
     std::cout << msg << ": " << SDL_GetError() << std::endl;
+    return false;
 }
 
 double clamp(double set, double min, double max) {
@@ -18,22 +19,26 @@ Game::Game() : player(20, HEIGHT/2-30, 20, 80), opponent(WIDTH-40, HEIGHT/2-40, 
 }
 
 bool Game::init() {
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-        error("SDL_Init");
-        return false;
-    }
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+        return error("SDL_Init");
 
     window = SDL_CreateWindow("PiNG", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
-    if (window == NULL) {
-	error("SDL_CreateWindow");
-	return false;
-    }
+    if (window == NULL)
+	return error("SDL_CreateWindow");
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (renderer == NULL) {
-        error("SDL_CreateRenderer");
-        return false;
-    }
+    if (renderer == NULL)
+        return error("SDL_CreateRenderer");
+
+    SDL_Surface *tmp = SDL_CreateRGBSurface(0, WIDTH, HEIGHT, 32, 0, 0, 0, 0);
+    if (tmp == NULL)
+        return error("SDL_CreateRGBSurface");
+    SDL_Rect line = { WIDTH/2 - 10, 0, 20, HEIGHT };
+    SDL_FillRect(tmp, &line, SDL_MapRGB(tmp->format, 0xff, 0xff, 0xff));
+    background = SDL_CreateTextureFromSurface(renderer, tmp);
+    if (background == NULL)
+        return error("SDL_CreateTextureFromSurface");
+    SDL_FreeSurface(tmp);
 
     return true;
 }
@@ -81,7 +86,16 @@ bool checkCollision(Entity a, Entity b) {
 
 void Game::update() {
     player.y += player.dY;
+    if (player.y < 0 || player.y + player.h > HEIGHT) {
+        player.y = clamp(player.y, 0, HEIGHT-player.h);
+        player.dY = 0;
+    }
     opponent.y += opponent.dY;
+    if (opponent.y < 0 || opponent.y + opponent.h > HEIGHT) {
+        opponent.y = clamp(opponent.y, 0, HEIGHT-opponent.h);
+        opponent.dY = 0;
+    }
+
     ball.x += ball.dX;
     ball.y = clamp(ball.y + ball.dY, 0, HEIGHT - ball.h);
     if (ball.y <= 0 || ball.y + ball.h >= HEIGHT)
@@ -93,6 +107,8 @@ void Game::update() {
 void Game::render() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xff);
     SDL_RenderClear(renderer);
+
+    SDL_RenderCopy(renderer, background, NULL, NULL);
 
     SDL_SetRenderDrawColor(renderer, 0xff, 0xff, 0xff, 0xff);
     player.draw(renderer);

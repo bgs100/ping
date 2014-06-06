@@ -10,6 +10,7 @@ class Game {
  private:
     SDL_Window *window;
     SDL_Renderer *renderer;
+    SDL_Texture *background;
     bool running;
     Entity player, opponent, ball;
     bool init();
