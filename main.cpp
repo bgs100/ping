@@ -1,4 +1,7 @@
 #include <iostream>
+#include <sstream>
+#include <stdlib.h>
+#include <time.h>
 #include "Game.h"
 
 bool error(const char *msg) {
@@ -14,13 +17,19 @@ double clamp(double set, double min, double max) {
 
 Game::Game() : player(20, HEIGHT/2-30, 20, 80), opponent(WIDTH-40, HEIGHT/2-40, 20, 80),
                ball(WIDTH/2, HEIGHT/2-10, 20, 20) {
-    ball.dX = 1;
-    ball.dY = -1;
+    ball.dX = rand() % 2 * 4 - 2;
+    ball.dY = rand() % 2 * 4 - 2;
+    score1 = score2 = 0;
 }
 
 bool Game::init() {
+    srand(time(NULL));
+
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
         return error("SDL_Init");
+
+    if (TTF_Init() != 0)
+        return error("TTF_Init");
 
     window = SDL_CreateWindow("PiNG", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
     if (window == NULL)
@@ -39,6 +48,10 @@ bool Game::init() {
     if (background == NULL)
         return error("SDL_CreateTextureFromSurface");
     SDL_FreeSurface(tmp);
+
+    font = TTF_OpenFont("kenpixel.ttf", 48);
+    if (font == NULL)
+        return error("TTF_OpenFont");
 
     return true;
 }
@@ -100,8 +113,36 @@ void Game::update() {
     ball.y = clamp(ball.y + ball.dY, 0, HEIGHT - ball.h);
     if (ball.y <= 0 || ball.y + ball.h >= HEIGHT)
         ball.dY *= -1;
-    if (checkCollision(ball, player) || checkCollision(ball, opponent))
-        ball.dX *= -1;
+    if (checkCollision(ball, player) || checkCollision(ball, opponent)) {
+        ball.dX *= -1.2;
+    }
+    if (ball.x + ball.w < 0 || ball.x > WIDTH) {
+        if (ball.x + ball.w < 0) {
+            score2++;
+            ball.dX = 2;
+        } else {
+            score1++;
+            ball.dX = -2;
+        }
+        ball.dY = rand() % 2 * 4 - 2;
+        ball.x = WIDTH / 2 - ball.w / 2;
+        ball.y = HEIGHT / 2 - ball.h / 2;
+    }
+}
+
+SDL_Texture *Game::textureText(const char *str, Uint8 r, Uint8 g, Uint8 b) {
+    SDL_Color color = { r, g, b, 0xff };
+    SDL_Surface *text = TTF_RenderText_Solid(font, str, color);
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, text);
+    SDL_FreeSurface(text);
+    return texture;
+}
+
+// This is dumb.
+const char *itoa(int x) {
+    std::stringstream ss;
+    ss << x;
+    return ss.str().c_str();
 }
 
 void Game::render() {
@@ -114,6 +155,21 @@ void Game::render() {
     player.draw(renderer);
     opponent.draw(renderer);
     ball.draw(renderer);
+
+    // Displaying text is a bit more work than I anticipated. :|
+    int w, h;
+    SDL_Texture *tScore1 = textureText(itoa(score1), 0xff, 0xff, 0xff);
+    SDL_QueryTexture(tScore1, NULL, NULL, &w, &h);
+    SDL_Rect dst1 = { WIDTH/4 - w/2, 40, w, h };
+    SDL_RenderCopy(renderer, tScore1, NULL, &dst1);
+
+    SDL_Texture *tScore2 = textureText(itoa(score2), 0xff, 0xff, 0xff);
+    SDL_QueryTexture(tScore2, NULL, NULL, &w, &h);
+    SDL_Rect dst2 = { WIDTH*3/4 - w/2, 40, w, h };
+    SDL_RenderCopy(renderer, tScore2, NULL, &dst2);
+
+    SDL_DestroyTexture(tScore1);
+    SDL_DestroyTexture(tScore2);
 
     SDL_RenderPresent(renderer);
 }
