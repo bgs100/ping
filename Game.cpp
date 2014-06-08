@@ -5,7 +5,17 @@
 #include "Game.h"
 
 bool error(const char *msg) {
-    std::cout << msg << ": " << SDL_GetError() << std::endl;
+    std::cerr << msg << std::endl;
+    return false;
+}
+
+bool SDLerror(const char *msg) {
+    std::cerr << msg << ": " << SDL_GetError() << std::endl;
+    return false;
+}
+
+bool netError(const char *msg) {
+    std::cerr << msg << ": " << SDLNet_GetError() << std::endl;
     return false;
 }
 
@@ -15,10 +25,12 @@ double clamp(double set, double min, double max) {
     return set;
 }
 
-Game::Game() : player(20, HEIGHT/2-30, 20, 80), opponent(WIDTH-40, HEIGHT/2-40, 20, 80),
-               ball(WIDTH/2, HEIGHT/2-10, 20, 20) {
-    ball.dX = rand() % 2 * 4 - 2;
-    ball.dY = rand() % 2 * 4 - 2;
+Game::Game(const char *host) : player(20, HEIGHT/2-30, 20, 80),
+                               opponent(WIDTH-40, HEIGHT/2-40, 20, 80),
+                               ball(WIDTH/2, HEIGHT/2-10, 20, 20),
+                               host(host) {
+    ball.dX = 1;//rand() % 2 * 4 - 2;
+    ball.dY = 1;//rand() % 2 * 4 - 2;
     score1 = score2 = 0;
 }
 
@@ -26,32 +38,85 @@ bool Game::init() {
     srand(time(NULL));
 
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
-        return error("SDL_Init");
+        return SDLerror("SDL_Init");
 
     if (TTF_Init() != 0)
-        return error("TTF_Init");
+        return SDLerror("TTF_Init");
 
     window = SDL_CreateWindow("PiNG", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
     if (window == NULL)
-	return error("SDL_CreateWindow");
+	return SDLerror("SDL_CreateWindow");
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (renderer == NULL)
-        return error("SDL_CreateRenderer");
+        return SDLerror("SDL_CreateRenderer");
 
     SDL_Surface *tmp = SDL_CreateRGBSurface(0, WIDTH, HEIGHT, 32, 0, 0, 0, 0);
     if (tmp == NULL)
-        return error("SDL_CreateRGBSurface");
+        return SDLerror("SDL_CreateRGBSurface");
     SDL_Rect line = { WIDTH/2 - 10, 0, 20, HEIGHT };
     SDL_FillRect(tmp, &line, SDL_MapRGB(tmp->format, 0xff, 0xff, 0xff));
     background = SDL_CreateTextureFromSurface(renderer, tmp);
     if (background == NULL)
-        return error("SDL_CreateTextureFromSurface");
+        return SDLerror("SDL_CreateTextureFromSurface");
     SDL_FreeSurface(tmp);
 
     font = TTF_OpenFont("kenpixel.ttf", 48);
     if (font == NULL)
-        return error("TTF_OpenFont");
+        return SDLerror("TTF_OpenFont");
+
+    if (host != NULL) {
+        IPaddress ip;
+        if (SDLNet_ResolveHost(&ip, host, 5556) != 0) {
+            netError("SDLNet_ResolveHost");
+            host = NULL;
+        } else {
+            server = SDLNet_TCP_Open(&ip);
+            if (server == NULL) {
+                netError("SDLNet_TCP_Open");
+                host = NULL;
+            } else {
+                socketSet = SDLNet_AllocSocketSet(1);
+                if (socketSet == NULL) {
+                    netError("SDLNet_AllocSocketSet");
+                    host = NULL;
+                }
+                SDLNet_TCP_AddSocket(socketSet, server);
+            }
+        }
+    }
+
+    return true;
+}
+
+bool Game::netWait() {
+    if (SDLNet_CheckSockets(socketSet, 10000) < 1)
+        return error("Connection to server timed out.");
+
+    char buffer[3];
+    int recvLen = SDLNet_TCP_Recv(server, buffer, 3);
+    if (recvLen < 3)
+        return error("Server disconnected.");
+
+    std::cout << "server sez: \"" << buffer << "\"" << std::endl;
+
+    if (buffer[0] == '2') {
+        ball.dX *= -1;
+        SDLNet_TCP_Send(server, "hi\n", 4);
+        return true;
+    }
+
+    while (SDLNet_CheckSockets(socketSet, 10000) < 1)
+        std::cerr << "Waiting for opponent to join..." << std::endl;
+
+    char buffer2[4];
+    recvLen = SDLNet_TCP_Recv(server, buffer2, 4);
+    if (recvLen < 1)
+        return error("Server disconnected.");
+    else if (recvLen < 4)
+        return error("Opponent disconnected.");
+    else if (strcmp(buffer2, "hi\n") != 0)
+        return error("Incorrect greeting.");
 
     return true;
 }
@@ -97,7 +162,42 @@ bool checkCollision(Entity a, Entity b) {
             a.x + a.w >= b.x && a.x <= b.x + b.w);
 }
 
+char *netReadLine(TCPsocket sock) {
+    char *buffer = (char *)malloc(256);
+    int i = 0;
+
+    do {
+        if (SDLNet_TCP_Recv(sock, buffer+i, 1) < 1) {
+            netError("SDLNet_TCP_Recv");
+            free(buffer);
+            return NULL;
+        }
+        i++;
+    } while (buffer[i-1] != '\n' && i < 256);
+
+    SDLNet_TCP_Recv(sock, buffer+i, 1);
+    return buffer;
+}
+
 void Game::update() {
+    int s1 = 0, s2 = 0;
+    while (host != NULL && SDLNet_CheckSockets(socketSet, 0)) {
+        char *msg = netReadLine(server);
+        if (msg == NULL) {
+            error("Host disconnected.");
+            host = NULL;
+        } else {
+            std::cout << msg;
+            std::stringstream ss(msg);
+            int bX;
+            double bdX;
+            ss >> bX >> ball.y >> bdX >> ball.dY >> opponent.y >> opponent.dY >> s1 >> s2;
+            ball.x = WIDTH - bX - ball.w;
+            ball.dX = -bdX;
+            free(msg);
+        }
+    }
+
     player.y += player.dY;
     if (player.y < 0 || player.y + player.h > HEIGHT) {
         player.y = clamp(player.y, 0, HEIGHT-player.h);
@@ -124,9 +224,22 @@ void Game::update() {
             score1++;
             ball.dX = -2;
         }
-        ball.dY = rand() % 2 * 4 - 2;
+        ball.dY = 1;//rand() % 2 * 4 - 2;
         ball.x = WIDTH / 2 - ball.w / 2;
         ball.y = HEIGHT / 2 - ball.h / 2;
+    }
+
+    if (host != NULL) {
+        if (s2 > score1)
+            score1 = s2;
+        if (s1 > score2)
+            score2 = s1;
+
+        std::stringstream ss;
+        ss << ball.x << " " << ball.y << " " << ball.dX << " " << ball.dY << " "
+           << player.y << " " << player.dY << " " << score1 << " " << score2 << "\n";
+        std::string s = ss.str();
+        SDLNet_TCP_Send(server, s.c_str(), s.length()+1);
     }
 }
 
@@ -180,6 +293,9 @@ int Game::run() {
     if (!init())
         return 1;
 
+    if (host != NULL && !netWait())
+        host = NULL;
+
     while (running) {
         handleEvents();
         update();
@@ -190,6 +306,10 @@ int Game::run() {
 }
 
 int main(int argc, char **argv) {
-    Game game;
-    return game.run();
+    Game *game;
+    if (argc > 1)
+        game = new Game(argv[1]);
+    else
+        game = new Game();
+    return game->run();
 }

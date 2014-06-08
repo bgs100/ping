@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
     if (socketSet == NULL)
         return error("SDLNet_AllocSocketSet");
 
-    if (SDLNet_ResolveHost(&serverIP, NULL, 9999) != 0)
+    if (SDLNet_ResolveHost(&serverIP, NULL, 5556) != 0)
         return error("SDLNet_ResolveHost");
 
     server = SDLNet_TCP_Open(&serverIP);
@@ -34,10 +34,13 @@ int main(int argc, char **argv) {
 
         if (SDLNet_SocketReady(server)) {
             if (clients[0] == NULL || clients[1] == NULL) {
-                int n = clients[1] == NULL;
+                int n = clients[0] != NULL;
                 clients[n] = SDLNet_TCP_Accept(server);
                 SDLNet_TCP_AddSocket(socketSet, clients[n]);
-                SDLNet_TCP_Send(clients[n], "Hello!\n", 8);
+                if (n == 0)
+                    SDLNet_TCP_Send(clients[n], "1\n", 3);
+                else
+                    SDLNet_TCP_Send(clients[n], "2\n", 3);
             } else {
                 TCPsocket tmp = SDLNet_TCP_Accept(server);
                 SDLNet_TCP_Send(tmp, "Sorry, full.\n", 14);
@@ -55,6 +58,7 @@ int main(int argc, char **argv) {
                     SDLNet_TCP_Close(clients[i]);
                     clients[i] = NULL;
                 } else {
+                    std::cout << buffer << std::endl;
                     SDLNet_TCP_Send(clients[1-i], buffer, recvLen);
                 }
             }
