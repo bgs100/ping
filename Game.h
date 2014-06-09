@@ -25,7 +25,7 @@ class Game {
 
     bool init();
     bool netWait();
-    void handleEvents();
+    void handleInput();
     void update();
     void render();
 };

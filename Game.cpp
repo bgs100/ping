@@ -29,8 +29,8 @@ Game::Game(const char *host) : player(20, HEIGHT/2-30, 20, 80),
                                opponent(WIDTH-40, HEIGHT/2-40, 20, 80),
                                ball(WIDTH/2, HEIGHT/2-10, 20, 20),
                                host(host) {
-    ball.dX = 1;//rand() % 2 * 4 - 2;
-    ball.dY = 1;//rand() % 2 * 4 - 2;
+    ball.dX = 2;//rand() % 2 * 4 - 2;
+    ball.dY = 2;//rand() % 2 * 4 - 2;
     score1 = score2 = 0;
 }
 
@@ -121,39 +121,29 @@ bool Game::netWait() {
     return true;
 }
 
-void Game::handleEvents() {
+void Game::handleInput() {
     static SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT)
             running = false;
-        else if (event.type == SDL_KEYDOWN) {
-            int sym = event.key.keysym.sym;
-            Entity *thing = NULL;
-            double change;
-            int min = -10, max = 10;
+    }
 
-            if (sym == SDLK_w || sym == SDLK_s)
-                thing = &player;
-            else if (sym == SDLK_UP || sym == SDLK_DOWN)
-                thing = &opponent;
+    const Uint8 *state = SDL_GetKeyboardState(NULL);
+    Entity *paddles[2] = { &player, &opponent };
+    SDL_Scancode up[2] = { SDL_SCANCODE_W, SDL_SCANCODE_UP };
+    SDL_Scancode down[2] = { SDL_SCANCODE_S, SDL_SCANCODE_DOWN };
+    for (int i = 0; i < 2; i++) {
+        int min = -10, max = 10;
+        double change = state[down[i]] - state[up[i]];
+        if (abs(change + paddles[i]->dY) < abs(paddles[i]->dY)) {
+            change *= 2;
+            if (paddles[i]->dY > 0)
+                min = 0;
             else
-                continue;
-
-            if (sym == SDLK_w || sym == SDLK_UP)
-                change = -1;
-            else
-                change = 1;
-            // Braking should be faster than accelerating.
-            if (abs(change + thing->dY) < abs(thing->dY)) {
-                change *= 3;
-                if (thing->dY > 0)
-                    min = 0;
-                else
-                    max = 0;
-            }
-            thing->dY = clamp(thing->dY + change, min, max);
+                max = 0;
         }
+        paddles[i]->dY = clamp(paddles[i]->dY + change, min, max);
     }
 }
 
@@ -213,9 +203,26 @@ void Game::update() {
     ball.y = clamp(ball.y + ball.dY, 0, HEIGHT - ball.h);
     if (ball.y <= 0 || ball.y + ball.h >= HEIGHT)
         ball.dY *= -1;
-    if (checkCollision(ball, player) || checkCollision(ball, opponent)) {
-        ball.dX *= -1.2;
+    bool which;
+    if ((which = checkCollision(ball, player)) || checkCollision(ball, opponent)) {
+        ball.dX *= -1.1;
+        if (which) {
+            ball.dY += player.dY / 2;
+        } else {
+            ball.dY += opponent.dY / 2;
+        }
     }
+
+    if (player.dY > 0)
+        player.dY = clamp(player.dY - .1, 0, 10);
+    else
+        player.dY = clamp(player.dY + .1, -10, 0);
+
+    if (opponent.dY > 0)
+        opponent.dY = clamp(opponent.dY - .1, 0, 10);
+    else
+        opponent.dY = clamp(opponent.dY + .1, -10, 0);
+
     if (ball.x + ball.w < 0 || ball.x > WIDTH) {
         if (ball.x + ball.w < 0) {
             score2++;
@@ -224,7 +231,7 @@ void Game::update() {
             score1++;
             ball.dX = -2;
         }
-        ball.dY = 1;//rand() % 2 * 4 - 2;
+        ball.dY = 2;//rand() % 2 * 4 - 2;
         ball.x = WIDTH / 2 - ball.w / 2;
         ball.y = HEIGHT / 2 - ball.h / 2;
     }
@@ -297,7 +304,7 @@ int Game::run() {
         host = NULL;
 
     while (running) {
-        handleEvents();
+        handleInput();
         update();
         render();
     }
