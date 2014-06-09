@@ -59,7 +59,8 @@ int main(int argc, char **argv) {
                     clients[i] = NULL;
                 } else {
                     std::cout << buffer << std::endl;
-                    SDLNet_TCP_Send(clients[1-i], buffer, recvLen);
+                    if (clients[1-i] != NULL)
+                        SDLNet_TCP_Send(clients[1-i], buffer, recvLen);
                 }
             }
         }
