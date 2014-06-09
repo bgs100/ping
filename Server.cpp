@@ -1,5 +1,7 @@
 #include <SDL2/SDL_net.h>
 #include <iostream>
+#include <sstream>
+#include <time.h>
 
 int error(const char *msg) {
     std::cout << msg << ": " << SDLNet_GetError() << std::endl;
@@ -11,6 +13,7 @@ int main(int argc, char **argv) {
     TCPsocket server;
     TCPsocket clients[2] = {0};
     char buffer[256];
+    int seed = time(NULL);
 
     if (SDLNet_Init() != 0)
         return error("SDLNet_Init()");
@@ -38,9 +41,13 @@ int main(int argc, char **argv) {
                 clients[n] = SDLNet_TCP_Accept(server);
                 SDLNet_TCP_AddSocket(socketSet, clients[n]);
                 if (n == 0)
-                    SDLNet_TCP_Send(clients[n], "1\n", 3);
+                    SDLNet_TCP_Send(clients[n], "1", 2);
                 else
-                    SDLNet_TCP_Send(clients[n], "2\n", 3);
+                    SDLNet_TCP_Send(clients[n], "2", 2);
+                std::stringstream ss;
+                ss << seed << "\n";
+                std::string s = ss.str();
+                SDLNet_TCP_Send(clients[n], s.c_str(), s.length()+1);
             } else {
                 TCPsocket tmp = SDLNet_TCP_Accept(server);
                 SDLNet_TCP_Send(tmp, "Sorry, full.\n", 14);

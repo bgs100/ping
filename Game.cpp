@@ -4,6 +4,8 @@
 #include <time.h>
 #include "Game.h"
 
+// Utility functions
+
 bool error(const char *msg) {
     std::cerr << msg << std::endl;
     return false;
@@ -25,12 +27,43 @@ double clamp(double set, double min, double max) {
     return set;
 }
 
+// This is dumb.
+const char *itoa(int x) {
+    std::stringstream ss;
+    ss << x;
+    return ss.str().c_str();
+}
+
+char *netReadLine(TCPsocket sock) {
+    char *buffer = (char *)malloc(256);
+    int i = 0;
+
+    do {
+        if (SDLNet_TCP_Recv(sock, buffer+i, 1) < 1) {
+            netError("SDLNet_TCP_Recv");
+            free(buffer);
+            return NULL;
+        }
+        i++;
+    } while (buffer[i-1] != '\n' && i < 256);
+
+    SDLNet_TCP_Recv(sock, buffer+i, 1);
+    return buffer;
+}
+
+bool checkCollision(Entity a, Entity b) {
+    return (a.y + a.h >= b.y && a.y <= b.y + b.h &&
+            a.x + a.w >= b.x && a.x <= b.x + b.w);
+}
+
+// Game methods
+
 Game::Game(const char *host) : player(20, HEIGHT/2-30, 20, 80),
                                opponent(WIDTH-40, HEIGHT/2-40, 20, 80),
                                ball(WIDTH/2, HEIGHT/2-10, 20, 20),
                                host(host) {
-    ball.dX = 2;//rand() % 2 * 4 - 2;
-    ball.dY = 2;//rand() % 2 * 4 - 2;
+    ball.dX = rand() % 2 * 4 - 2;
+    ball.dY = rand() % 2 * 4 - 2;
     score1 = score2 = 0;
 }
 
@@ -93,12 +126,20 @@ bool Game::netWait() {
     if (SDLNet_CheckSockets(socketSet, 10000) < 1)
         return error("Connection to server timed out.");
 
-    char buffer[3];
-    int recvLen = SDLNet_TCP_Recv(server, buffer, 3);
-    if (recvLen < 3)
+    char buffer[2];
+    int recvLen = SDLNet_TCP_Recv(server, buffer, 2);
+    if (recvLen < 2)
         return error("Server disconnected.");
 
-    std::cout << "server sez: \"" << buffer << "\"" << std::endl;
+    std::cout << "This client is player " << buffer << "." << std::endl;
+
+    char *msg = netReadLine(server);
+    if (msg == NULL)
+        return error("Server disconnected.");
+    int seed = atoi(msg);
+    srand(seed);
+    ball.dX = rand() % 2 * 4 - 2;
+    ball.dY = rand() % 2 * 4 - 2;
 
     if (buffer[0] == '2') {
         ball.dX *= -1;
@@ -145,28 +186,6 @@ void Game::handleInput() {
         }
         paddles[i]->dY = clamp(paddles[i]->dY + change, min, max);
     }
-}
-
-bool checkCollision(Entity a, Entity b) {
-    return (a.y + a.h >= b.y && a.y <= b.y + b.h &&
-            a.x + a.w >= b.x && a.x <= b.x + b.w);
-}
-
-char *netReadLine(TCPsocket sock) {
-    char *buffer = (char *)malloc(256);
-    int i = 0;
-
-    do {
-        if (SDLNet_TCP_Recv(sock, buffer+i, 1) < 1) {
-            netError("SDLNet_TCP_Recv");
-            free(buffer);
-            return NULL;
-        }
-        i++;
-    } while (buffer[i-1] != '\n' && i < 256);
-
-    SDLNet_TCP_Recv(sock, buffer+i, 1);
-    return buffer;
 }
 
 void Game::update() {
@@ -231,7 +250,7 @@ void Game::update() {
             score1++;
             ball.dX = -2;
         }
-        ball.dY = 2;//rand() % 2 * 4 - 2;
+        ball.dY = rand() % 2 * 4 - 2;
         ball.x = WIDTH / 2 - ball.w / 2;
         ball.y = HEIGHT / 2 - ball.h / 2;
     }
@@ -256,13 +275,6 @@ SDL_Texture *Game::textureText(const char *str, Uint8 r, Uint8 g, Uint8 b) {
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, text);
     SDL_FreeSurface(text);
     return texture;
-}
-
-// This is dumb.
-const char *itoa(int x) {
-    std::stringstream ss;
-    ss << x;
-    return ss.str().c_str();
 }
 
 void Game::render() {
