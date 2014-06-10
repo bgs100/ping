@@ -76,6 +76,11 @@ bool Game::init() {
     if (TTF_Init() != 0)
         return SDLerror("TTF_Init");
 
+    if (host != NULL && SDLNet_Init() != 0) {
+        netError("SDLNet_Init");
+        host = NULL;
+    }
+
     window = SDL_CreateWindow("PiNG", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
     if (window == NULL)
 	return SDLerror("SDL_CreateWindow");

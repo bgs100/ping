@@ -1,3 +1,5 @@
+#include <SDL2/SDL.h>
+
 class Entity {
  public:
     int x, y, w, h;
