@@ -1,3 +1,6 @@
+#ifndef ENTITY_H
+#define ENTITY_H
+
 #include <SDL2/SDL.h>
 
 class Entity {
@@ -17,3 +20,5 @@ class Entity {
         SDL_RenderFillRect(renderer, &r);
     }
 };
+
+#endif

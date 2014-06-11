@@ -1,31 +1,28 @@
+#ifndef GAME_H
+#define GAME_H
+
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_net.h>
+#include "GameState.h"
+#include "GameManager.h"
 #include "Entity.h"
 
-class Game {
+class Game: public GameState {
  public:
-    static const int WIDTH = 1024;
-    static const int HEIGHT = 768;
-    Game(const char *host=NULL);
-    int run();
+    Game(GameManager *m, const char *host);
+    virtual bool init();
+    virtual void handleInput();
+    virtual void update();
+    virtual void render();
+
  private:
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-    SDL_Texture *background;
-    TTF_Font *font;
-    bool running;
     Entity player, opponent, ball;
     int score1, score2;
-    const char *host;
     TCPsocket server;
     SDLNet_SocketSet socketSet;
+    const char *host;
 
-    SDL_Texture *textureText(const char *str, Uint8 r, Uint8 g, Uint8 b);
-
-    bool init();
     bool netWait();
-    void handleInput();
-    void update();
-    void render();
 };
+
+#endif
