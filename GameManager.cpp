@@ -5,7 +5,7 @@
 #include "GameManager.h"
 #include "utility.h"
 
-GameManager::GameManager(const char *host) : game(this, host), host(host) {}
+GameManager::GameManager(const char *host) : titleScreen(this), game(this, host), host(host) {}
 
 bool GameManager::init() {
     srand(time(NULL));
@@ -40,20 +40,29 @@ bool GameManager::init() {
         return SDLerror("SDL_CreateTextureFromSurface");
     SDL_FreeSurface(tmp);
 
-    font = TTF_OpenFont("kenpixel.ttf", 48);
-    if (font == NULL)
+    font32 = TTF_OpenFont("kenpixel-square-mod.ttf", 32);
+    font48 = TTF_OpenFont("kenpixel-square-mod.ttf", 48);
+    font64 = TTF_OpenFont("kenpixel-square-mod.ttf", 64);
+    if (font32 == NULL || font48 == NULL || font64 == NULL)
         return SDLerror("TTF_OpenFont");
 
+    titleScreen.init();
     game.init();
-    state = &game;
+    state = &titleScreen;
 
     return true;
 }
 
-SDL_Texture *GameManager::textureText(const char *str, Uint8 r, Uint8 g, Uint8 b) {
+SDL_Texture *GameManager::textureText(TTF_Font *font, const char *str, Uint8 r, Uint8 g, Uint8 b, int *w, int *h) {
     SDL_Color color = { r, g, b, 0xff };
     SDL_Surface *text = TTF_RenderText_Solid(font, str, color);
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, text);
+
+    if (w != NULL)
+        *w = text->w;
+    if (h != NULL)
+        *h = text->h;
+
     SDL_FreeSurface(text);
     return texture;
 }
@@ -71,6 +80,11 @@ void GameManager::handleInput() {
     state->handleInput();
 }
 
+void GameManager::render() {
+    state->render();
+    SDL_RenderPresent(renderer);
+}
+
 int GameManager::run() {
     running = true;
 
@@ -80,7 +94,7 @@ int GameManager::run() {
     while (running) {
         handleInput();
         state->update();
-        state->render();
+        render();
     }
 
     return 0;

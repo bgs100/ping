@@ -196,20 +196,15 @@ void Game::render() {
     opponent.draw(m->renderer);
     ball.draw(m->renderer);
 
-    // Displaying text is a bit more work than I anticipated. :|
     int w, h;
-    SDL_Texture *tScore1 = m->textureText(itoa(score1), 0xff, 0xff, 0xff);
-    SDL_QueryTexture(tScore1, NULL, NULL, &w, &h);
+    SDL_Texture *tScore1 = m->textureText(m->font48, itoa(score1), 0xff, 0xff, 0xff, &w, &h);
     SDL_Rect dst1 = { m->WIDTH/4 - w/2, 40, w, h };
     SDL_RenderCopy(m->renderer, tScore1, NULL, &dst1);
 
-    SDL_Texture *tScore2 = m->textureText(itoa(score2), 0xff, 0xff, 0xff);
-    SDL_QueryTexture(tScore2, NULL, NULL, &w, &h);
+    SDL_Texture *tScore2 = m->textureText(m->font48, itoa(score2), 0xff, 0xff, 0xff, &w, &h);
     SDL_Rect dst2 = { m->WIDTH*3/4 - w/2, 40, w, h };
     SDL_RenderCopy(m->renderer, tScore2, NULL, &dst2);
 
     SDL_DestroyTexture(tScore1);
     SDL_DestroyTexture(tScore2);
-
-    SDL_RenderPresent(m->renderer);
 }

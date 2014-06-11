@@ -1,10 +1,11 @@
+// -*- c++ -*-
 #ifndef ENTITY_H
 #define ENTITY_H
 
 #include <SDL2/SDL.h>
 
 class Entity {
- public:
+public:
     int x, y, w, h;
     double dX, dY;
     Entity() { dX = dY = 0; }
