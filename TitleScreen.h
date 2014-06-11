@@ -5,8 +5,6 @@
 #include <SDL2/SDL.h>
 #include "GameState.h"
 
-class GameState;
-
 class TitleScreen: public GameState {
 public:
     TitleScreen(GameManager *m) : GameState(m) {}
