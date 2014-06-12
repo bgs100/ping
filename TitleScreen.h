@@ -1,9 +1,10 @@
 // -*- c++ -*-
-#ifndef TITLE_SCREEN_H
-#define TITLE_SCREEN_H
+#ifndef PING_TITLE_SCREEN_H
+#define PING_TITLE_SCREEN_H
 
 #include <SDL2/SDL.h>
 #include "GameState.h"
+#include "Texture.h"
 
 class TitleScreen: public GameState {
 public:
@@ -14,8 +15,7 @@ public:
     virtual void render();
 
 private:
-    SDL_Texture *titleText, *playText;
-    int titleW, titleH, playW, playH;
+    Texture *titleText, *playText;
 };
 
 #endif

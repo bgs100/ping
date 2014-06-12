@@ -1,6 +1,6 @@
 // -*- c++ -*-
-#ifndef GAME_MANAGER_H
-#define GAME_MANAGER_H
+#ifndef PING_GAME_MANAGER_H
+#define PING_GAME_MANAGER_H
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
@@ -14,14 +14,12 @@ public:
     GameManager(const char *host=NULL);
     int run();
 
-    SDL_Texture *textureText(TTF_Font *font, const char *str, Uint8 r, Uint8 g, Uint8 b, int *w=NULL, int *h=NULL);
-
     TitleScreen titleScreen;
     Game game;
 
     SDL_Window *window;
     SDL_Renderer *renderer;
-    SDL_Texture *background;
+    Texture *background;
     TTF_Font *font32, *font48, *font64;
     const char *host;
     GameState *state;

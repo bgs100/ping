@@ -3,6 +3,7 @@
 #include "GameManager.h"
 #include "Game.h"
 #include "GameState.h"
+#include "Texture.h"
 #include "utility.h"
 
 Game::Game(GameManager *m, const char *host) : GameState(m),
@@ -189,22 +190,17 @@ void Game::render() {
     SDL_SetRenderDrawColor(m->renderer, 0, 0, 0, 0xff);
     SDL_RenderClear(m->renderer);
 
-    SDL_RenderCopy(m->renderer, m->background, NULL, NULL);
+    m->background->render(m->renderer, 0, 0);
 
     SDL_SetRenderDrawColor(m->renderer, 0xff, 0xff, 0xff, 0xff);
     player.draw(m->renderer);
     opponent.draw(m->renderer);
     ball.draw(m->renderer);
 
-    int w, h;
-    SDL_Texture *tScore1 = m->textureText(m->font48, itoa(score1), 0xff, 0xff, 0xff, &w, &h);
-    SDL_Rect dst1 = { m->WIDTH/4 - w/2, 40, w, h };
-    SDL_RenderCopy(m->renderer, tScore1, NULL, &dst1);
-
-    SDL_Texture *tScore2 = m->textureText(m->font48, itoa(score2), 0xff, 0xff, 0xff, &w, &h);
-    SDL_Rect dst2 = { m->WIDTH*3/4 - w/2, 40, w, h };
-    SDL_RenderCopy(m->renderer, tScore2, NULL, &dst2);
-
-    SDL_DestroyTexture(tScore1);
-    SDL_DestroyTexture(tScore2);
+    Texture *tScore1 = Texture::fromText(m->renderer, m->font48, itoa(score1), 0xff, 0xff, 0xff);
+    Texture *tScore2 = Texture::fromText(m->renderer, m->font48, itoa(score2), 0xff, 0xff, 0xff);
+    tScore1->render(m->renderer, m->WIDTH/4 - tScore1->w/2, 40);
+    tScore2->render(m->renderer, m->WIDTH*3/4 - tScore2->w/2, 40);
+    delete tScore1;
+    delete tScore2;
 }

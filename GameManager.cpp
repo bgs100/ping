@@ -35,9 +35,7 @@ bool GameManager::init() {
 
     SDL_Rect line = { WIDTH/2 - 6, 0, 12, HEIGHT };
     SDL_FillRect(tmp, &line, SDL_MapRGB(tmp->format, 0xff, 0xff, 0xff));
-    background = SDL_CreateTextureFromSurface(renderer, tmp);
-    if (background == NULL)
-        return SDLerror("SDL_CreateTextureFromSurface");
+    background = Texture::fromSurface(renderer, tmp);
     SDL_FreeSurface(tmp);
 
     font32 = TTF_OpenFont("kenpixel-square-mod.ttf", 32);
@@ -51,20 +49,6 @@ bool GameManager::init() {
     state = &titleScreen;
 
     return true;
-}
-
-SDL_Texture *GameManager::textureText(TTF_Font *font, const char *str, Uint8 r, Uint8 g, Uint8 b, int *w, int *h) {
-    SDL_Color color = { r, g, b, 0xff };
-    SDL_Surface *text = TTF_RenderText_Solid(font, str, color);
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, text);
-
-    if (w != NULL)
-        *w = text->w;
-    if (h != NULL)
-        *h = text->h;
-
-    SDL_FreeSurface(text);
-    return texture;
 }
 
 void GameManager::handleInput() {

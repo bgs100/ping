@@ -1,6 +1,6 @@
 // -*- c++ -*-
-#ifndef ENTITY_H
-#define ENTITY_H
+#ifndef PING_ENTITY_H
+#define PING_ENTITY_H
 
 #include <SDL2/SDL.h>
 

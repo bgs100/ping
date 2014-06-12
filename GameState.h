@@ -1,6 +1,6 @@
 // -*- c++ -*-
-#ifndef GAME_STATE_H
-#define GAME_STATE_H
+#ifndef PING_GAME_STATE_H
+#define PING_GAME_STATE_H
 
 #include <SDL2/SDL.h>
 

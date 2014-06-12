@@ -1,5 +1,5 @@
-#ifndef UTILITY_H
-#define UTILITY_H
+#ifndef PING_UTILITY_H
+#define PING_UTILITY_H
 
 #include <SDL2/SDL_net.h>
 #include "Entity.h"
