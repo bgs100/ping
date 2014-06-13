@@ -41,10 +41,12 @@ bool GameManager::init() {
     background = Texture::fromSurface(renderer, tmp);
     SDL_FreeSurface(tmp);
 
+    font16 = TTF_OpenFont("kenpixel-square-mod.ttf", 16);
+    font24 = TTF_OpenFont("kenpixel-square-mod.ttf", 24);
     font32 = TTF_OpenFont("kenpixel-square-mod.ttf", 32);
     font48 = TTF_OpenFont("kenpixel-square-mod.ttf", 48);
     font64 = TTF_OpenFont("kenpixel-square-mod.ttf", 64);
-    if (font32 == NULL || font48 == NULL || font64 == NULL)
+    if (font16 == NULL || font24 == NULL || font32 == NULL || font48 == NULL || font64 == NULL)
         return SDLerror("TTF_OpenFont");
 
     bounceSound = Mix_LoadWAV("boop.wav");
@@ -55,7 +57,6 @@ bool GameManager::init() {
     Mix_AllocateChannels(16);
 
     titleScreen.init();
-    game.init();
     state = &titleScreen;
 
     return true;

@@ -7,10 +7,10 @@
 #include "utility.h"
 
 Game::Game(GameManager *m, const char *host) : GameState(m),
+                                               host(host),
                                                player(20, m->HEIGHT/2-30, 20, 80),
                                                opponent(m->WIDTH-40, m->HEIGHT/2-40, 20, 80),
-                                               ball(m->WIDTH/2, m->HEIGHT/2-10, 20, 20),
-                                               host(host) {
+                                               ball(m->WIDTH/2, m->HEIGHT/2-10, 20, 20) {
     ball.dX = rand() % 2 * 4 - 2;
     ball.dY = rand() % 2 * 4 - 2;
     score1 = score2 = 0;

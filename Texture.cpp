@@ -30,6 +30,8 @@ Texture *Texture::fromSurface(SDL_Renderer *renderer, SDL_Surface *surface) {
 }
 
 Texture *Texture::fromText(SDL_Renderer *renderer, TTF_Font *font, const char *text, Uint8 r, Uint8 g, Uint8 b) {
+    if (text[0] == '\0') // TTF_RenderText_Solid returns NULL when given empty strings.
+        return NULL;
     SDL_Color color = { r, g, b, 0xff };
     SDL_Surface *surface = TTF_RenderText_Solid(font, text, color);
     Texture *texture = fromSurface(renderer, surface);

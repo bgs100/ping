@@ -10,6 +10,8 @@
 
 class Game: public GameState {
  public:
+    const char *host;
+
     Game(GameManager *m, const char *host);
     virtual bool init();
     virtual void handleInput();
@@ -21,7 +23,6 @@ class Game: public GameState {
     int score1, score2;
     TCPsocket server;
     SDLNet_SocketSet socketSet;
-    const char *host;
 
     bool netWait();
 };
