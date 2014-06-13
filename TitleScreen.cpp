@@ -8,7 +8,7 @@ bool TitleScreen::init() {
     const char *buttonStrs[] = { "Multiplayer (Local)", "Multiplayer (Networked)", "Tutorial", "Credits", "Quit" };
     for (int i = 0; i < END_BUTTON; i++) {
         selectedButtons[i] = Texture::fromText(m->renderer, m->font32, buttonStrs[i], 0xff, 0xff, 0xff);
-        unselectedButtons[i] = Texture::fromText(m->renderer, m->font32, buttonStrs[i], 0xcc, 0xcc, 0xcc);
+        unselectedButtons[i] = Texture::fromText(m->renderer, m->font32, buttonStrs[i], 0xaa, 0xaa, 0xaa);
     }
     return true;
 }

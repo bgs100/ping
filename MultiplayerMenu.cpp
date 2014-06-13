@@ -52,7 +52,7 @@ void MultiplayerMenu::render() {
 
     prompt->render(m->renderer, (m->WIDTH - prompt->w)/2, 260);
 
-    SDL_SetRenderDrawColor(m->renderer, 0xcc, 0xcc, 0xcc, 0xff);
+    SDL_SetRenderDrawColor(m->renderer, 0xaa, 0xaa, 0xaa, 0xff);
     SDL_Rect rect = { 190, 310, m->WIDTH - 2*190, TTF_FontHeight(m->font16) };
     SDL_RenderDrawRect(m->renderer, &rect);
 
