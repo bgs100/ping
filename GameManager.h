@@ -4,6 +4,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_mixer.h>
 #include "TitleScreen.h"
 #include "Game.h"
 
@@ -21,6 +22,7 @@ public:
     SDL_Renderer *renderer;
     Texture *background;
     TTF_Font *font32, *font48, *font64;
+Mix_Chunk *bounceSound, *hitSound;
     const char *host;
     GameState *state;
 

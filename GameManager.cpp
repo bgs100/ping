@@ -16,8 +16,11 @@ bool GameManager::init() {
     if (TTF_Init() != 0)
         return SDLerror("TTF_Init");
 
+    if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 4096) != 0)
+        return SDLerror("Mix_OpenAudio");
+
     if (host != NULL && SDLNet_Init() != 0) {
-        netError("SDLNet_Init");
+        SDLerror("SDLNet_Init");
         host = NULL;
     }
 
@@ -43,6 +46,13 @@ bool GameManager::init() {
     font64 = TTF_OpenFont("kenpixel-square-mod.ttf", 64);
     if (font32 == NULL || font48 == NULL || font64 == NULL)
         return SDLerror("TTF_OpenFont");
+
+    bounceSound = Mix_LoadWAV("boop.wav");
+    hitSound = Mix_LoadWAV("hit.wav");
+    if (bounceSound == NULL || hitSound == NULL)
+        return SDLerror("Mix_LoadWAV");
+
+    Mix_AllocateChannels(16);
 
     titleScreen.init();
     game.init();

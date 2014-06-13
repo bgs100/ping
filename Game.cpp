@@ -20,17 +20,17 @@ bool Game::init() {
     if (host != NULL) {
         IPaddress ip;
         if (SDLNet_ResolveHost(&ip, host, 5556) != 0) {
-            netError("SDLNet_ResolveHost");
+            SDLerror("SDLNet_ResolveHost");
             host = NULL;
         } else {
             server = SDLNet_TCP_Open(&ip);
             if (server == NULL) {
-                netError("SDLNet_TCP_Open");
+                SDLerror("SDLNet_TCP_Open");
                 host = NULL;
             } else {
                 socketSet = SDLNet_AllocSocketSet(1);
                 if (socketSet == NULL) {
-                    netError("SDLNet_AllocSocketSet");
+                    SDLerror("SDLNet_AllocSocketSet");
                     host = NULL;
                 }
                 SDLNet_TCP_AddSocket(socketSet, server);
@@ -137,8 +137,10 @@ void Game::update() {
 
     ball.x += ball.dX;
     ball.y = clamp(ball.y + ball.dY, 0, m->HEIGHT - ball.h);
-    if (ball.y <= 0 || ball.y + ball.h >= m->HEIGHT)
+    if (ball.y <= 0 || ball.y + ball.h >= m->HEIGHT) {
         ball.dY *= -1;
+        Mix_PlayChannel(-1, m->bounceSound, 0);
+    }
     bool which;
     if ((which = checkCollision(ball, player)) || checkCollision(ball, opponent)) {
         ball.dX *= -1.1;
@@ -147,6 +149,7 @@ void Game::update() {
         } else {
             ball.dY += opponent.dY / 2;
         }
+        Mix_PlayChannel(-1, m->hitSound, 0);
     }
 
     if (player.dY > 0)

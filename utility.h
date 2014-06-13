@@ -6,7 +6,6 @@
 
 bool error(const char *msg);
 bool SDLerror(const char *msg);
-bool netError(const char *msg);
 
 double clamp(double set, double min, double max);
 const char *itoa(int x);

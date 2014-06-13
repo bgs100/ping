@@ -15,11 +15,6 @@ bool SDLerror(const char *msg) {
     return false;
 }
 
-bool netError(const char *msg) {
-    std::cerr << msg << ": " << SDLNet_GetError() << std::endl;
-    return false;
-}
-
 double clamp(double set, double min, double max) {
     if (set > max) return max;
     if (set < min) return min;
@@ -39,7 +34,7 @@ char *netReadLine(TCPsocket sock) {
 
     do {
         if (SDLNet_TCP_Recv(sock, buffer+i, 1) < 1) {
-            netError("SDLNet_TCP_Recv");
+            SDLerror("SDLNet_TCP_Recv");
             free(buffer);
             return NULL;
         }
