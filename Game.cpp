@@ -136,9 +136,13 @@ void Game::update() {
     }
 
     ball.x += ball.dX;
-    ball.y = clamp(ball.y + ball.dY, 0, m->HEIGHT - ball.h);
-    if (ball.y <= 0 || ball.y + ball.h >= m->HEIGHT) {
+    ball.y += ball.dY;
+    if (ball.y < 0 || ball.y + ball.h > m->HEIGHT) {
         ball.dY *= -1;
+        if (ball.y < 0)
+            ball.y = 0;
+        else
+            ball.y = m->HEIGHT - ball.h;
         Mix_PlayChannel(-1, m->bounceSound, 0);
     }
     bool which;
