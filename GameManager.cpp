@@ -16,7 +16,7 @@ bool GameManager::init() {
     if (TTF_Init() != 0)
         return SDLerror("TTF_Init");
 
-    if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 4096) != 0)
+    if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 2048) != 0)
         return SDLerror("Mix_OpenAudio");
 
     if (host != NULL && SDLNet_Init() != 0) {

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <math.h>
 #include "GameManager.h"
 #include "Game.h"
 #include "GameState.h"
@@ -136,7 +137,10 @@ void Game::update() {
     }
 
     ball.x += ball.dX;
-    ball.y += ball.dY;
+    // This has to be rounded; truncation causes undesirable behavior
+    // with a dY between -.5 (inclusive) and -1 (exclusive), which can
+    // cause the ball to get stuck on the top of the screen when it shouldn't.
+    ball.y = round(ball.y + ball.dY);
     if (ball.y < 0 || ball.y + ball.h > m->HEIGHT) {
         ball.dY *= -1;
         if (ball.y < 0)
@@ -145,6 +149,7 @@ void Game::update() {
             ball.y = m->HEIGHT - ball.h;
         Mix_PlayChannel(-1, m->bounceSound, 0);
     }
+
     bool which;
     if ((which = checkCollision(ball, player)) || checkCollision(ball, opponent)) {
         ball.dX *= -1.1;
