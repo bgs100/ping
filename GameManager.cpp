@@ -62,7 +62,7 @@ bool GameManager::init() {
     return true;
 }
 
-void GameManager::handleInput() {
+void GameManager::handleEvents() {
     static SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
@@ -71,8 +71,6 @@ void GameManager::handleInput() {
         else
             state->handleEvent(event);
     }
-
-    state->handleInput();
 }
 
 void GameManager::render() {
@@ -86,10 +84,14 @@ int GameManager::run() {
     if (!init())
         return 1;
 
+    Uint32 last, time = SDL_GetTicks(), delta = 0;
     while (running) {
-        handleInput();
-        state->update();
+        handleEvents();
+        state->update(delta);
         render();
+        last = time;
+        time = SDL_GetTicks();
+        delta = time - last;
     }
 
     return 0;

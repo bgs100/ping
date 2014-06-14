@@ -85,7 +85,7 @@ bool Game::netWait() {
     return true;
 }
 
-void Game::handleInput() {
+void Game::handleInput(int delta) {
     const Uint8 *state = SDL_GetKeyboardState(NULL);
     Entity *paddles[2] = { &player, &opponent };
     SDL_Scancode up[2] = { SDL_SCANCODE_W, SDL_SCANCODE_UP };
@@ -100,12 +100,15 @@ void Game::handleInput() {
             else
                 max = 0;
         }
-        paddles[i]->dY = clamp(paddles[i]->dY + change, min, max);
+        paddles[i]->dY = clamp(paddles[i]->dY + change * delta / (1000.0 / 60.0), min, max);
     }
 }
 
-void Game::update() {
-    handleInput();
+void Game::update(int delta) {
+    handleInput(delta);
+
+    // For convenience:
+    double deltaD = delta / (1000.0 / 60.0);
 
     int s1 = 0, s2 = 0;
     while (host != NULL && SDLNet_CheckSockets(socketSet, 0)) {
@@ -125,22 +128,22 @@ void Game::update() {
         }
     }
 
-    player.y += player.dY;
+    player.y += player.dY * deltaD;
     if (player.y < 0 || player.y + player.h > m->HEIGHT) {
         player.y = clamp(player.y, 0, m->HEIGHT-player.h);
         player.dY = 0;
     }
-    opponent.y += opponent.dY;
+    opponent.y += opponent.dY * deltaD;
     if (opponent.y < 0 || opponent.y + opponent.h > m->HEIGHT) {
         opponent.y = clamp(opponent.y, 0, m->HEIGHT-opponent.h);
         opponent.dY = 0;
     }
 
-    ball.x += ball.dX;
+    ball.x += ball.dX * deltaD;
     // This has to be rounded; truncation causes undesirable behavior
     // with a dY between -.5 (inclusive) and -1 (exclusive), which can
     // cause the ball to get stuck on the top of the screen when it shouldn't.
-    ball.y = round(ball.y + ball.dY);
+    ball.y = round(ball.y + ball.dY * deltaD);
     if (ball.y < 0 || ball.y + ball.h > m->HEIGHT) {
         ball.dY *= -1;
         if (ball.y < 0)
@@ -162,14 +165,14 @@ void Game::update() {
     }
 
     if (player.dY > 0)
-        player.dY = clamp(player.dY - .1, 0, 10);
+        player.dY = clamp(player.dY - .1*deltaD, 0, 10);
     else
-        player.dY = clamp(player.dY + .1, -10, 0);
+        player.dY = clamp(player.dY + .1*deltaD, -10, 0);
 
     if (opponent.dY > 0)
-        opponent.dY = clamp(opponent.dY - .1, 0, 10);
+        opponent.dY = clamp(opponent.dY - .1*deltaD, 0, 10);
     else
-        opponent.dY = clamp(opponent.dY + .1, -10, 0);
+        opponent.dY = clamp(opponent.dY + .1*deltaD, -10, 0);
 
     if (ball.x + ball.w < 0 || ball.x > m->WIDTH) {
         if (ball.x + ball.w < 0) {

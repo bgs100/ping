@@ -43,8 +43,6 @@ void TitleScreen::handleEvent(SDL_Event &event) {
     }
 }
 
-void TitleScreen::handleInput() {}
-
 void TitleScreen::render() {
     SDL_SetRenderDrawColor(m->renderer, 0, 0, 0, 0xff);
     SDL_RenderClear(m->renderer);

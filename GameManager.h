@@ -30,7 +30,7 @@ public:
 
 private:
     bool init();
-    void handleInput();
+    void handleEvents();
     void render();
 };
 

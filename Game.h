@@ -14,8 +14,7 @@ class Game: public GameState {
 
     Game(GameManager *m, const char *host);
     virtual bool init();
-    virtual void handleInput();
-    virtual void update();
+    virtual void update(int delta);
     virtual void render();
 
  private:
@@ -25,6 +24,7 @@ class Game: public GameState {
     SDLNet_SocketSet socketSet;
 
     bool netWait();
+    void handleInput(int delta);
 };
 
 #endif

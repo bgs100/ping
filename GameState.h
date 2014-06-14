@@ -15,8 +15,7 @@ class GameState {
     virtual bool init() { return true; }
     virtual void render() {}
     virtual void handleEvent(SDL_Event &event) {}
-    virtual void handleInput() {}
-    virtual void update() {}
+    virtual void update(int delta) {}
 
  protected:
     GameManager *m;

@@ -14,7 +14,6 @@ public:
     TitleScreen(GameManager *m);
     virtual bool init();
     virtual void handleEvent(SDL_Event &event);
-    virtual void handleInput();
     virtual void render();
     void cleanup();
 
