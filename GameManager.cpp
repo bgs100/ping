@@ -1,11 +1,7 @@
-#include <iostream>
-#include <sstream>
 #include <stdlib.h>
 #include <time.h>
 #include "GameManager.h"
 #include "utility.h"
-
-GameManager::GameManager(const char *host) : titleScreen(this), game(this, host), host(host) {}
 
 bool GameManager::init() {
     srand(time(NULL));
@@ -19,11 +15,9 @@ bool GameManager::init() {
     if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 2048) != 0)
         return SDLerror("Mix_OpenAudio");
 
-    if (host != NULL && SDLNet_Init() != 0) {
-        SDLerror("SDLNet_Init");
-        host = NULL;
-    }
-
+    if (SDLNet_Init() != 0)
+        return SDLerror("SDLNet_Init");
+    
     window = SDL_CreateWindow("PiNG", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
     if (window == NULL)
 	return SDLerror("SDL_CreateWindow");
@@ -56,10 +50,25 @@ bool GameManager::init() {
 
     Mix_AllocateChannels(16);
 
-    titleScreen.init();
-    state = &titleScreen;
+    TitleScreen *titleScreen = new TitleScreen(this);
+    pushState(titleScreen);
+    titleScreen->init();
 
     return true;
+}
+
+void GameManager::pushState(GameState *state) {
+    stateStack.push_back(state);
+}
+
+GameState *GameManager::popState() {
+    GameState *top = stateStack.back();
+    stateStack.pop_back();
+    return top;
+}
+
+void GameManager::revertState() {
+    delete popState();
 }
 
 void GameManager::handleEvents() {
@@ -69,12 +78,12 @@ void GameManager::handleEvents() {
         if (event.type == SDL_QUIT)
             running = false;
         else
-            state->handleEvent(event);
+            stateStack.back()->handleEvent(event);
     }
 }
 
 void GameManager::render() {
-    state->render();
+    stateStack.back()->render();
     SDL_RenderPresent(renderer);
 }
 
@@ -87,7 +96,7 @@ int GameManager::run() {
     Uint32 last, time = SDL_GetTicks(), delta = 0;
     while (running) {
         handleEvents();
-        state->update(delta);
+        stateStack.back()->update(delta);
         render();
         last = time;
         time = SDL_GetTicks();
@@ -98,10 +107,6 @@ int GameManager::run() {
 }
 
 int main(int argc, char **argv) {
-    GameManager *gm;
-    if (argc > 1)
-        gm = new GameManager(argv[1]);
-    else
-        gm = new GameManager();
-    return gm->run();
+    GameManager manager;
+    return manager.run();
 }

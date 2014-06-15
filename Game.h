@@ -10,10 +10,9 @@
 
 class Game: public GameState {
  public:
-    const char *host;
-
-    Game(GameManager *m, const char *host);
-    virtual bool init();
+    Game(GameManager *m);
+    virtual bool init(const char *host=NULL);
+    virtual void handleEvent(SDL_Event& event);
     virtual void update(int delta);
     virtual void render();
 
@@ -22,6 +21,7 @@ class Game: public GameState {
     int score1, score2;
     TCPsocket server;
     SDLNet_SocketSet socketSet;
+    bool multiplayer;
 
     bool netWait();
     void handleInput(int delta);

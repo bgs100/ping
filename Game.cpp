@@ -7,42 +7,50 @@
 #include "Texture.h"
 #include "utility.h"
 
-Game::Game(GameManager *m, const char *host) : GameState(m),
-                                               host(host),
-                                               player(20, m->HEIGHT/2-30, 20, 80),
-                                               opponent(m->WIDTH-40, m->HEIGHT/2-40, 20, 80),
-                                               ball(m->WIDTH/2, m->HEIGHT/2-10, 20, 20) {
+Game::Game(GameManager *m) : GameState(m),
+                             player(20, m->HEIGHT/2-30, 20, 80),
+                             opponent(m->WIDTH-40, m->HEIGHT/2-40, 20, 80),
+                             ball(m->WIDTH/2, m->HEIGHT/2-10, 20, 20),
+                             score1(0), score2(0) {
     ball.dX = rand() % 2 * 4 - 2;
     ball.dY = rand() % 2 * 4 - 2;
-    score1 = score2 = 0;
 }
 
-bool Game::init() {
-    if (host != NULL) {
-        IPaddress ip;
-        if (SDLNet_ResolveHost(&ip, host, 5556) != 0) {
-            SDLerror("SDLNet_ResolveHost");
-            host = NULL;
-        } else {
-            server = SDLNet_TCP_Open(&ip);
-            if (server == NULL) {
-                SDLerror("SDLNet_TCP_Open");
-                host = NULL;
-            } else {
-                socketSet = SDLNet_AllocSocketSet(1);
-                if (socketSet == NULL) {
-                    SDLerror("SDLNet_AllocSocketSet");
-                    host = NULL;
-                }
-                SDLNet_TCP_AddSocket(socketSet, server);
-            }
-        }
+// host is NULL by default (see Game.h).
+bool Game::init(const char *host) {
+    if (host == NULL) {
+        multiplayer = false;
+        return true;
     }
 
-    if (host != NULL && !netWait())
-        host = NULL;
+    multiplayer = true;
+    
+    // TODO: Rather than just reverting back to the multiplayer
+    // menu on failure, this should switch with an error screen.
+    IPaddress ip;
+    if (SDLNet_ResolveHost(&ip, host, 5556) != 0) {
+        SDLerror("SDLNet_ResolveHost");
+        m->revertState();
+        return false;
+    }
 
-    return true;
+    server = SDLNet_TCP_Open(&ip);
+    if (server == NULL) {
+        SDLerror("SDLNet_TCP_Open");
+        m->revertState();
+        return false;
+    }
+
+    socketSet = SDLNet_AllocSocketSet(1);
+    if (socketSet == NULL) {
+        SDLerror("SDLNet_AllocSocketSet");
+        m->revertState();
+        return false;
+    }
+
+    SDLNet_TCP_AddSocket(socketSet, server);
+
+    return netWait();
 }
 
 bool Game::netWait() {
@@ -85,6 +93,11 @@ bool Game::netWait() {
     return true;
 }
 
+void Game::handleEvent(SDL_Event &event) {
+    if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
+        m->revertState();
+}
+
 void Game::handleInput(int delta) {
     const Uint8 *state = SDL_GetKeyboardState(NULL);
     Entity *paddles[2] = { &player, &opponent };
@@ -111,11 +124,14 @@ void Game::update(int delta) {
     double deltaD = delta / (1000.0 / 60.0);
 
     int s1 = 0, s2 = 0;
-    while (host != NULL && SDLNet_CheckSockets(socketSet, 0)) {
+    while (multiplayer && SDLNet_CheckSockets(socketSet, 0)) {
         char *msg = netReadLine(server);
         if (msg == NULL) {
             error("Host disconnected.");
-            host = NULL;
+            // TODO: Rather than just reverting to the multiplayer
+            // menu, this should display an error screen/dialog.
+            m->revertState();
+            return;
         } else {
             std::cout << msg;
             std::stringstream ss(msg);
@@ -187,7 +203,7 @@ void Game::update(int delta) {
         ball.y = m->HEIGHT / 2 - ball.h / 2;
     }
 
-    if (host != NULL) {
+    if (multiplayer) {
         if (s2 > score1)
             score1 = s2;
         if (s1 > score2)

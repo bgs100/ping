@@ -2,6 +2,7 @@
 #ifndef PING_GAME_MANAGER_H
 #define PING_GAME_MANAGER_H
 
+#include <vector>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
@@ -12,23 +13,22 @@ class GameManager {
 public:
     static const int WIDTH = 1024;
     static const int HEIGHT = 768;
-    GameManager(const char *host=NULL);
-    int run();
-
-    TitleScreen titleScreen;
-    Game game;
 
     SDL_Window *window;
     SDL_Renderer *renderer;
     Texture *background;
     TTF_Font *font16, *font24, *font32, *font48, *font64;
     Mix_Chunk *bounceSound, *hitSound;
-    const char *host;
-    GameState *state;
-
     bool running;
 
+    void pushState(GameState *state);
+    GameState *popState();
+    void revertState();
+    int run();
+
 private:
+    std::vector<GameState *> stateStack;
+
     bool init();
     void handleEvents();
     void render();

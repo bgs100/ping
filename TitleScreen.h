@@ -15,7 +15,6 @@ public:
     virtual bool init();
     virtual void handleEvent(SDL_Event &event);
     virtual void render();
-    void cleanup();
 
 private:
     MultiplayerMenu multiplayerMenu;

@@ -3,7 +3,9 @@
 #include "MultiplayerMenu.h"
 #include "GameManager.h"
 
-MultiplayerMenu::MultiplayerMenu(GameManager *m) : GameState(m), inputTexture(NULL) {}
+MultiplayerMenu::MultiplayerMenu(GameManager *m) : GameState(m), inputTexture(NULL) {
+    inputText[0] = '\0';
+}
 
 bool MultiplayerMenu::init() {
     SDL_StartTextInput();
@@ -28,9 +30,12 @@ void MultiplayerMenu::handleEvent(SDL_Event &event) {
             inputText[259] = '\0';
             renderText = true;
         } else if (key == SDLK_RETURN) {
-            m->game.host = inputText;
-            m->state = &m->game;
-            m->game.init();
+            // TODO: Parse for a custom port.
+            Game *game = new Game(m);
+            m->pushState(game);
+            game->init(inputText);
+        } else if (key == SDLK_ESCAPE) {
+            m->revertState();
         }
     } else if (event.type == SDL_TEXTINPUT) {
         char *text = event.text.text;

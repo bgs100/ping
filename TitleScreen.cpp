@@ -30,13 +30,13 @@ void TitleScreen::handleEvent(SDL_Event &event) {
     } else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
         // TODO: Add in code for the other buttons.
         if (selected == MULTIPLAYER_LOCAL) {
-            m->state = &m->game;
-            cleanup();
-            m->game.init();
+            Game *game = new Game(m);
+            m->pushState(game);
+            game->init();
         } else if (selected == MULTIPLAYER_NET) {
-            multiplayerMenu.init();
-            m->state = &multiplayerMenu;
-            cleanup();
+            MultiplayerMenu *menu = new MultiplayerMenu(m);
+            m->pushState(menu);
+            menu->init();
         } else if (selected == QUIT) {
             m->running = false;
         }
@@ -55,11 +55,4 @@ void TitleScreen::render() {
         else
             unselectedButtons[i]->render(m->renderer, 100, 300 + i*70);
     }
-}
-
-void TitleScreen::cleanup() {
-    for (int i = 0; i < END_BUTTON; i++) {
-        delete selectedButtons[i];
-        delete unselectedButtons[i];
-    }    
 }

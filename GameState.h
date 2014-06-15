@@ -9,9 +9,8 @@ class GameManager;
 
 class GameState {
  public:
-    GameState(GameManager *m) {
-        this->m = m;
-    }
+    GameState(GameManager *m) : m(m) {}
+    virtual ~GameState() {}
     virtual bool init() { return true; }
     virtual void render() {}
     virtual void handleEvent(SDL_Event &event) {}
