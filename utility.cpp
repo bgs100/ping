@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_net.h>
-#include "Entity.h"
+#include "utility.h"
+#include "ErrorScreen.h"
 
 bool error(const char *msg) {
     std::cerr << msg << std::endl;
@@ -13,6 +13,20 @@ bool error(const char *msg) {
 bool SDLerror(const char *msg) {
     std::cerr << msg << ": " << SDL_GetError() << std::endl;
     return false;
+}
+
+bool errorScreen(GameManager *m, const char *msg) {
+    m->swapState(new ErrorScreen(m, msg));
+    return false;
+}
+
+bool errorWithScreen(GameManager *m, const char *msg) {
+    errorScreen(m, msg);
+    return error(msg);
+}
+
+void debug(const char *msg) {
+    std::cerr << msg << std::endl;
 }
 
 double clamp(double set, double min, double max) {

@@ -1,4 +1,3 @@
-#include <iostream>
 #include <sstream>
 #include <math.h>
 #include "GameManager.h"
@@ -38,22 +37,19 @@ bool Game::init(const char *host) {
         SDLerror("SDLNet_ResolveHost");
         std::stringstream ss;
         ss << "Failed to resolve host: " << host;
-        m->swapState(new ErrorScreen(m, ss.str().c_str()));
-        return false;
+        return errorScreen(m, ss.str().c_str());
     }
 
     server = SDLNet_TCP_Open(&ip);
     if (server == NULL) {
         SDLerror("SDLNet_TCP_Open");
-        m->swapState(new ErrorScreen(m, "Failed to open connection."));
-        return false;
+        return errorScreen(m, "Failed to open connection.");
     }
 
     socketSet = SDLNet_AllocSocketSet(1);
     if (socketSet == NULL) {
         SDLerror("SDLNet_AllocSocketSet");
-        m->swapState(new ErrorScreen(m, "Failed to allocate socket set."));
-        return false;
+        return errorScreen(m, "Failed to allocate socket set.");
     }
 
     SDLNet_TCP_AddSocket(socketSet, server);
@@ -62,28 +58,22 @@ bool Game::init(const char *host) {
 }
 
 bool Game::netWait() {
-    if (SDLNet_CheckSockets(socketSet, 10000) < 1) {
-        const char *err = "Connection to server timed out.";
-        m->swapState(new ErrorScreen(m, err));
-        return error(err);
-    }
+    if (SDLNet_CheckSockets(socketSet, 10000) < 1)
+        return errorWithScreen(m, "Connection to server timed out.");
 
     char buffer[2];
     int recvLen = SDLNet_TCP_Recv(server, buffer, 2);
-    if (recvLen < 2) {
-        const char *err = "Server disconnected.";
-        m->swapState(new ErrorScreen(m, err));
-        return error(err);
-    }
+    if (recvLen < 2)
+        return errorWithScreen(m, "Server disconnected.");
 
-    std::cout << "This client is player " << buffer << "." << std::endl;
+    std::stringstream ss;
+    ss << "This client is player " << buffer << ".";
+    debug(ss.str().c_str());
 
     char *msg = netReadLine(server);
-    if (msg == NULL) {
-        const char *err = "Server disconnected.";
-        m->swapState(new ErrorScreen(m, err));
-        return error(err);
-    }
+    if (msg == NULL)
+        return errorWithScreen(m, "Server disconnected.");
+
     int seed = atoi(msg);
     srand(seed);
     ball.dX = rand() % 2 * 4 - 2;
@@ -96,23 +86,16 @@ bool Game::netWait() {
     }
 
     while (SDLNet_CheckSockets(socketSet, 10000) < 1)
-        std::cerr << "Waiting for opponent to join..." << std::endl;
+        debug("Waiting for opponent to join...");
 
     char buffer2[4];
     recvLen = SDLNet_TCP_Recv(server, buffer2, 4);
-    if (recvLen < 1) {
-        const char *err = "Server disconnected.";
-        m->swapState(new ErrorScreen(m, err));
-        return error(err);
-    } else if (recvLen < 4) {
-        const char *err = "Opponent disconnected.";
-        m->swapState(new ErrorScreen(m, err));
-        return error(err);
-    } else if (strcmp(buffer2, "hi\n") != 0) {
-        const char *err = "Incorrect greeting.";
-        m->swapState(new ErrorScreen(m, err));
-        return error(err);
-    }
+    if (recvLen < 1)
+        return errorWithScreen(m, "Server disconnected.");
+    else if (recvLen < 4)
+        return errorWithScreen(m, "Opponent disconnected.");
+    else if (strcmp(buffer2, "hi\n") != 0)
+        return errorWithScreen(m, "Incorrect greeting.");
 
     return true;
 }
@@ -151,12 +134,10 @@ void Game::update(int delta) {
     while (multiplayer && SDLNet_CheckSockets(socketSet, 0)) {
         char *msg = netReadLine(server);
         if (msg == NULL) {
-            const char *err = "Host disconnected.";
             // TODO: Perhaps this should show a dialog or
             // semi-transparent screen instead? Might be nice to see
             // the final score.
-            m->swapState(new ErrorScreen(m, err));
-            error(err);
+            errorWithScreen(m, "Host disconnected.");
             return;
         } else {
             std::stringstream ss(msg);
