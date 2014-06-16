@@ -24,6 +24,7 @@ public:
     void pushState(GameState *state);
     GameState *popState();
     void revertState();
+    void swapState(GameState *state);
     int run();
 
 private:

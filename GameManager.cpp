@@ -71,6 +71,11 @@ void GameManager::revertState() {
     delete popState();
 }
 
+void GameManager::swapState(GameState *state) {
+    revertState();
+    pushState(state);
+}
+
 void GameManager::handleEvents() {
     static SDL_Event event;
 
