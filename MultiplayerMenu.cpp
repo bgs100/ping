@@ -3,13 +3,20 @@
 #include "MultiplayerMenu.h"
 #include "GameManager.h"
 
+Texture *MultiplayerMenu::prompt = NULL;
+
 MultiplayerMenu::MultiplayerMenu(GameManager *m) : GameState(m), inputTexture(NULL) {
     inputText[0] = '\0';
 }
 
+MultiplayerMenu::~MultiplayerMenu() {
+    delete inputTexture;
+}
+
 bool MultiplayerMenu::init() {
     SDL_StartTextInput();
-    prompt = Texture::fromText(m->renderer, m->font24, "Enter server address as domain:port (default 5556)", 0xff, 0xff, 0xff);
+    if (prompt == NULL)
+        prompt = Texture::fromText(m->renderer, m->font24, "Enter server address as domain:port (default 5556)", 0xff, 0xff, 0xff);
     return true;
 }
 
@@ -52,9 +59,6 @@ void MultiplayerMenu::handleEvent(SDL_Event &event) {
 }
 
 void MultiplayerMenu::render() {
-    SDL_SetRenderDrawColor(m->renderer, 0, 0, 0, 0xff);
-    SDL_RenderClear(m->renderer);
-
     prompt->render(m->renderer, (m->WIDTH - prompt->w)/2, 260);
 
     SDL_SetRenderDrawColor(m->renderer, 0xaa, 0xaa, 0xaa, 0xff);

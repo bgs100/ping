@@ -7,9 +7,8 @@
 
 class Texture {
 public:
-    Texture();
     Texture(SDL_Texture *texture, int w=-1, int h=-1);
-    virtual ~Texture();
+    ~Texture();
     void render(SDL_Renderer *renderer, int x, int y);
 
     int w, h;

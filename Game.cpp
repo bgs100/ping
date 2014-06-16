@@ -10,10 +10,17 @@
 Game::Game(GameManager *m) : GameState(m),
                              player(20, m->HEIGHT/2-30, 20, 80),
                              opponent(m->WIDTH-40, m->HEIGHT/2-40, 20, 80),
-                             ball(m->WIDTH/2, m->HEIGHT/2-10, 20, 20),
-                             score1(0), score2(0) {
-    ball.dX = rand() % 2 * 4 - 2;
-    ball.dY = rand() % 2 * 4 - 2;
+                             ball(m->WIDTH/2, m->HEIGHT/2-10, 20, 20, rand() % 2 * 4 - 2, rand() % 2 * 4 - 2),
+                             score1(0), score2(0),
+                             server(NULL), socketSet(NULL) {}
+
+Game::~Game() {
+    if (multiplayer) {
+        if (server != NULL)
+            SDLNet_TCP_Close(server);
+        if (socketSet != NULL)
+            SDLNet_FreeSocketSet(socketSet);
+    }
 }
 
 // host is NULL by default (see Game.h).
@@ -218,9 +225,6 @@ void Game::update(int delta) {
 }
 
 void Game::render() {
-    SDL_SetRenderDrawColor(m->renderer, 0, 0, 0, 0xff);
-    SDL_RenderClear(m->renderer);
-
     m->background->render(m->renderer, 0, 0);
 
     SDL_SetRenderDrawColor(m->renderer, 0xff, 0xff, 0xff, 0xff);
@@ -228,8 +232,9 @@ void Game::render() {
     opponent.draw(m->renderer);
     ball.draw(m->renderer);
 
-    Texture *tScore1 = Texture::fromText(m->renderer, m->font48, itoa(score1), 0xff, 0xff, 0xff);
-    Texture *tScore2 = Texture::fromText(m->renderer, m->font48, itoa(score2), 0xff, 0xff, 0xff);
+    char buf[21]; // Max number of characters for a 64-bit int in base 10.
+    Texture *tScore1 = Texture::fromText(m->renderer, m->font48, itoa(score1, buf, 21), 0xff, 0xff, 0xff);
+    Texture *tScore2 = Texture::fromText(m->renderer, m->font48, itoa(score2, buf, 21), 0xff, 0xff, 0xff);
     tScore1->render(m->renderer, m->WIDTH/4 - tScore1->w/2, 40);
     tScore2->render(m->renderer, m->WIDTH*3/4 - tScore2->w/2, 40);
     delete tScore1;

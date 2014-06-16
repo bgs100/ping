@@ -11,10 +11,12 @@
 class Game: public GameState {
  public:
     Game(GameManager *m);
-    virtual bool init(const char *host=NULL);
-    virtual void handleEvent(SDL_Event& event);
-    virtual void update(int delta);
-    virtual void render();
+    ~Game();
+
+    bool init(const char *host=NULL);
+    void handleEvent(SDL_Event& event);
+    void update(int delta);
+    void render();
 
  private:
     Entity player, opponent, ball;

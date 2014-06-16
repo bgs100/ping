@@ -83,7 +83,11 @@ void GameManager::handleEvents() {
 }
 
 void GameManager::render() {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xff);
+    SDL_RenderClear(renderer);
+
     stateStack.back()->render();
+
     SDL_RenderPresent(renderer);
 }
 
@@ -103,7 +107,33 @@ int GameManager::run() {
         delta = time - last;
     }
 
+    cleanup();
+
     return 0;
+}
+
+void GameManager::cleanup() {
+    for (std::vector<GameState *>::reverse_iterator it = stateStack.rbegin(); it != stateStack.rend(); it++)
+        delete *it;
+
+    Mix_FreeChunk(hitSound);
+    Mix_FreeChunk(bounceSound);
+
+    TTF_CloseFont(font64);
+    TTF_CloseFont(font48);
+    TTF_CloseFont(font32);
+    TTF_CloseFont(font24);
+    TTF_CloseFont(font16);
+
+    delete background;
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+
+    SDLNet_Quit();
+    Mix_CloseAudio();
+    TTF_Quit();
+    SDL_Quit();
 }
 
 int main(int argc, char **argv) {

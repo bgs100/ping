@@ -12,9 +12,9 @@ class GameState {
     GameState(GameManager *m) : m(m) {}
     virtual ~GameState() {}
     virtual bool init() { return true; }
-    virtual void render() {}
     virtual void handleEvent(SDL_Event &event) {}
     virtual void update(int delta) {}
+    virtual void render() {}
 
  protected:
     GameManager *m;

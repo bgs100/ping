@@ -1,7 +1,15 @@
 #include "TitleScreen.h"
 #include "GameManager.h"
 
-TitleScreen::TitleScreen(GameManager *m) : GameState(m), multiplayerMenu(m), selected(-1) {}
+TitleScreen::TitleScreen(GameManager *m) : GameState(m), selected(-1) {}
+
+TitleScreen::~TitleScreen() {
+    delete titleText;
+    for (int i = 0; i < END_BUTTON; i++) {
+        delete selectedButtons[i];
+        delete unselectedButtons[i];
+    }
+}
 
 bool TitleScreen::init() {
     titleText = Texture::fromText(m->renderer, m->font64, "PiNG", 0xff, 0xff, 0xff);
@@ -44,9 +52,6 @@ void TitleScreen::handleEvent(SDL_Event &event) {
 }
 
 void TitleScreen::render() {
-    SDL_SetRenderDrawColor(m->renderer, 0, 0, 0, 0xff);
-    SDL_RenderClear(m->renderer);
-
     titleText->render(m->renderer, 100, 50);
 
     for (int i = 0; i < END_BUTTON; i++) {

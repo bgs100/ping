@@ -8,7 +8,7 @@ bool error(const char *msg);
 bool SDLerror(const char *msg);
 
 double clamp(double set, double min, double max);
-const char *itoa(int x);
+const char *itoa(int x, char *buf, int size);
 char *netReadLine(TCPsocket sock);
 bool checkCollision(Entity a, Entity b);
 

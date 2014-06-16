@@ -12,12 +12,12 @@ enum Button { MULTIPLAYER_LOCAL, MULTIPLAYER_NET, TUTORIAL, CREDITS, QUIT, END_B
 class TitleScreen: public GameState {
 public:
     TitleScreen(GameManager *m);
-    virtual bool init();
-    virtual void handleEvent(SDL_Event &event);
-    virtual void render();
+    ~TitleScreen();
+    bool init();
+    void handleEvent(SDL_Event &event);
+    void render();
 
 private:
-    MultiplayerMenu multiplayerMenu;
     Texture *titleText;
     Texture *selectedButtons[END_BUTTON];
     Texture *unselectedButtons[END_BUTTON];

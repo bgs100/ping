@@ -32,6 +32,7 @@ private:
     bool init();
     void handleEvents();
     void render();
+    void cleanup();
 };
 
 #endif

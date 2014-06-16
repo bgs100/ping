@@ -1,6 +1,6 @@
 #include <iostream>
-#include <sstream>
 #include <stdlib.h>
+#include <stdio.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
 #include "Entity.h"
@@ -21,11 +21,9 @@ double clamp(double set, double min, double max) {
     return set;
 }
 
-// This is dumb.
-const char *itoa(int x) {
-    std::stringstream ss;
-    ss << x;
-    return ss.str().c_str();
+char *itoa(int x, char *buf, int size) {
+    snprintf(buf, size, "%d", x);
+    return buf;
 }
 
 char *netReadLine(TCPsocket sock) {

@@ -1,8 +1,6 @@
 #include "Texture.h"
 #include "utility.h"
 
-Texture::Texture() : w(0), h(0), texture(NULL) {}
-
 Texture::Texture(SDL_Texture *texture, int w, int h) : w(w), h(h), texture(texture) {
     int *w_ptr = NULL, *h_ptr = NULL;
     if (w == -1)
