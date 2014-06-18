@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include "MultiplayerMenu.h"
 #include "GameManager.h"
+#include "KeyboardInput.h"
 
 Texture *MultiplayerMenu::prompt = NULL;
 
@@ -40,7 +41,7 @@ void MultiplayerMenu::handleEvent(SDL_Event &event) {
             // TODO: Parse for a custom port.
             Game *game = new Game(m);
             m->pushState(game);
-            game->init(inputText);
+            game->init(new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), inputText);
         } else if (key == SDLK_ESCAPE) {
             m->revertState();
         }

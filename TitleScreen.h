@@ -7,7 +7,7 @@
 #include "Texture.h"
 #include "MultiplayerMenu.h"
 
-enum Button { MULTIPLAYER_LOCAL, MULTIPLAYER_NET, TUTORIAL, CREDITS, QUIT, END_BUTTON };
+enum Button { SINGLEPLAYER, MULTIPLAYER_LOCAL, MULTIPLAYER_NET, TUTORIAL, CREDITS, QUIT, END_BUTTON };
 
 class TitleScreen: public GameState {
 public:

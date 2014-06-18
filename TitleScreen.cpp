@@ -1,5 +1,7 @@
 #include "TitleScreen.h"
 #include "GameManager.h"
+#include "KeyboardInput.h"
+#include "AIInput.h"
 
 TitleScreen::TitleScreen(GameManager *m) : GameState(m), selected(-1) {}
 
@@ -13,7 +15,7 @@ TitleScreen::~TitleScreen() {
 
 bool TitleScreen::init() {
     titleText = Texture::fromText(m->renderer, m->font64, "PiNG", 0xff, 0xff, 0xff);
-    const char *buttonStrs[] = { "Multiplayer (Local)", "Multiplayer (Networked)", "Tutorial", "Credits", "Quit" };
+    const char *buttonStrs[] = { "Singleplayer", "Multiplayer (Local)", "Multiplayer (Networked)", "Tutorial", "Credits", "Quit" };
     for (int i = 0; i < END_BUTTON; i++) {
         selectedButtons[i] = Texture::fromText(m->renderer, m->font32, buttonStrs[i], 0xff, 0xff, 0xff);
         unselectedButtons[i] = Texture::fromText(m->renderer, m->font32, buttonStrs[i], 0xaa, 0xaa, 0xaa);
@@ -37,10 +39,14 @@ void TitleScreen::handleEvent(SDL_Event &event) {
         selected = button;
     } else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
         // TODO: Add in code for the other buttons.
-        if (selected == MULTIPLAYER_LOCAL) {
+        if (selected == SINGLEPLAYER) {
             Game *game = new Game(m);
             m->pushState(game);
-            game->init();
+            game->init(new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), new AIInput(game));
+        } else if (selected == MULTIPLAYER_LOCAL) {
+            Game *game = new Game(m);
+            m->pushState(game);
+            game->init(new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), new KeyboardInput(SDL_SCANCODE_UP, SDL_SCANCODE_DOWN));
         } else if (selected == MULTIPLAYER_NET) {
             MultiplayerMenu *menu = new MultiplayerMenu(m);
             m->pushState(menu);

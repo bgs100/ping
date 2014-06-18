@@ -1,5 +1,4 @@
 #include <sstream>
-#include <math.h>
 #include "GameManager.h"
 #include "Game.h"
 #include "GameState.h"
@@ -7,30 +6,42 @@
 #include "Texture.h"
 #include "utility.h"
 
-Game::Game(GameManager *m) : GameState(m),
-                             player(20, m->HEIGHT/2-30, 20, 80),
-                             opponent(m->WIDTH-40, m->HEIGHT/2-40, 20, 80),
-                             ball(m->WIDTH/2, m->HEIGHT/2-10, 20, 20, rand() % 2 * 4 - 2, rand() % 2 * 4 - 2),
-                             score1(0), score2(0),
-                             server(NULL), socketSet(NULL) {}
+Game::Game(GameManager *m)
+    : GameState(m),
+      ball(m->WIDTH/2, m->HEIGHT/2-10, 20, 20, rand() % 2 * 4 - 2, rand() % 2 * 4 - 2),
+      player(20, m->HEIGHT/2-30, 20, 80), opponent(m->WIDTH-40, m->HEIGHT/2-40, 20, 80),
+      score1(0), score2(0), server(NULL), socketSet(NULL) {
+}
 
 Game::~Game() {
-    if (multiplayer) {
+    if (networked) {
         if (server != NULL)
             SDLNet_TCP_Close(server);
         if (socketSet != NULL)
             SDLNet_FreeSocketSet(socketSet);
     }
+
+    delete playerInput;
+    delete opponentInput;
 }
 
-// host is NULL by default (see Game.h).
-bool Game::init(const char *host) {
-    if (host == NULL) {
-        multiplayer = false;
-        return true;
-    }
+// Currently, having an opponent input component and running a networked
+// game are mutually exclusive. It'd be neat to have a subclass of
+// PaddleInput for networked input, but I don't see how that'd be
+// possible, currently (though networking needs a huge overhaul anyway
+// so who knows what might happen).
+bool Game::init(PaddleInput *p1input, PaddleInput *p2input) {
+    playerInput = p1input;
+    opponentInput = p2input;
+    networked = false;
+    return true;
+}
 
-    multiplayer = true;
+bool Game::init(PaddleInput *p1input, const char *host) {
+    playerInput = p1input;
+    opponentInput = NULL;
+
+    networked = true;
     
     IPaddress ip;
     if (SDLNet_ResolveHost(&ip, host, 5556) != 0) {
@@ -106,13 +117,14 @@ void Game::handleEvent(SDL_Event &event) {
 }
 
 void Game::handleInput(int delta) {
-    const Uint8 *state = SDL_GetKeyboardState(NULL);
-    Entity *paddles[2] = { &player, &opponent };
-    SDL_Scancode up[2] = { SDL_SCANCODE_W, SDL_SCANCODE_UP };
-    SDL_Scancode down[2] = { SDL_SCANCODE_S, SDL_SCANCODE_DOWN };
+    Entity *paddles[] = { &player, &opponent };
+    PaddleInput *inputs[] = { playerInput, opponentInput };
+
     for (int i = 0; i < 2; i++) {
+        if (inputs[i] == NULL)
+            continue;
+        int change = inputs[i]->update(*paddles[i]);
         int min = -10, max = 10;
-        double change = state[down[i]] - state[up[i]];
         if (abs(change + paddles[i]->dY) < abs(paddles[i]->dY)) {
             change *= 2;
             if (paddles[i]->dY > 0)
@@ -131,7 +143,7 @@ void Game::update(int delta) {
     double deltaD = delta / (1000.0 / 60.0);
 
     int s1 = 0, s2 = 0;
-    while (multiplayer && SDLNet_CheckSockets(socketSet, 0)) {
+    while (networked && SDLNet_CheckSockets(socketSet, 0)) {
         char *msg = netReadLine(server);
         if (msg == NULL) {
             // TODO: Perhaps this should show a dialog or
@@ -141,7 +153,7 @@ void Game::update(int delta) {
             return;
         } else {
             std::stringstream ss(msg);
-            int bX;
+            double bX;
             double bdX;
             ss >> bX >> ball.y >> bdX >> ball.dY >> opponent.y >> opponent.dY >> s1 >> s2;
             ball.x = m->WIDTH - bX - ball.w;
@@ -162,10 +174,7 @@ void Game::update(int delta) {
     }
 
     ball.x += ball.dX * deltaD;
-    // This has to be rounded; truncation causes undesirable behavior
-    // with a dY between -.5 (inclusive) and -1 (exclusive), which can
-    // cause the ball to get stuck on the top of the screen when it shouldn't.
-    ball.y = round(ball.y + ball.dY * deltaD);
+    ball.y += ball.dY * deltaD;
     if (ball.y < 0 || ball.y + ball.h > m->HEIGHT) {
         ball.dY *= -1;
         if (ball.y < 0)
@@ -209,7 +218,7 @@ void Game::update(int delta) {
         ball.y = m->HEIGHT / 2 - ball.h / 2;
     }
 
-    if (multiplayer) {
+    if (networked) {
         if (s2 > score1)
             score1 = s2;
         if (s1 > score2)

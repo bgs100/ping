@@ -30,8 +30,11 @@ bool GameManager::init() {
     if (tmp == NULL)
         return SDLerror("SDL_CreateRGBSurface");
 
-    SDL_Rect line = { WIDTH/2 - 6, 0, 12, HEIGHT };
-    SDL_FillRect(tmp, &line, SDL_MapRGB(tmp->format, 0xff, 0xff, 0xff));
+    for (int i = 0; i * 46 < HEIGHT; i++) {
+        SDL_Rect line = { WIDTH/2 - 6, i * 46, 12, 32 };
+        SDL_FillRect(tmp, &line, SDL_MapRGB(tmp->format, 0xff, 0xff, 0xff));
+    }
+
     background = Texture::fromSurface(renderer, tmp);
     SDL_FreeSurface(tmp);
 
@@ -103,6 +106,7 @@ int GameManager::run() {
         return 1;
 
     Uint32 last, time = SDL_GetTicks(), delta = 0;
+
     while (running) {
         handleEvents();
         stateStack.back()->update(delta);
