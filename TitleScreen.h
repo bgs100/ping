@@ -5,9 +5,7 @@
 #include <SDL2/SDL.h>
 #include "GameState.h"
 #include "Texture.h"
-#include "MultiplayerMenu.h"
-
-enum Button { SINGLEPLAYER, MULTIPLAYER_LOCAL, MULTIPLAYER_NET, TUTORIAL, CREDITS, QUIT, END_BUTTON };
+#include "ButtonMenu.h"
 
 class TitleScreen: public GameState {
 public:
@@ -18,12 +16,11 @@ public:
     void render();
 
 private:
-    Texture *titleText;
-    Texture *selectedButtons[END_BUTTON];
-    Texture *unselectedButtons[END_BUTTON];
-    int selected;
+    enum Button { SINGLEPLAYER, MULTIPLAYER_LOCAL, MULTIPLAYER_NET, TUTORIAL, CREDITS, QUIT, END_BUTTON };
+    static const char *labels[];
 
-    int getButton(int x, int y);
+    Texture *titleText;
+    ButtonMenu buttonMenu;
 };
 
 #endif

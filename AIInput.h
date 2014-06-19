@@ -7,10 +7,13 @@
 
 class AIInput: public PaddleInput {
 public:
-    AIInput(Game *game);
+    enum Difficulty { MEDIUM, HARD, NOPE, INSANITY };
+
+    AIInput(Game *game, Difficulty difficulty);
     int update(Entity& paddle);
 private:
     Game *game;
+    Difficulty difficulty;
 };
 
 #endif
