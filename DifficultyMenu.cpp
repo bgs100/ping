@@ -19,11 +19,10 @@ void DifficultyMenu::handleEvent(SDL_Event &event) {
         buttonMenu.selectButton(event.motion.x, event.motion.y);
     } else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
         int selected = buttonMenu.getSelected();
-        // TODO: Add in code for the other buttons.
-        if (selected >= MEDIUM) {
+        if (selected != -1) {
             Game *game = new Game(m);
             m->pushState(game);
-            game->init(new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), new AIInput(game, (AIInput::Difficulty)(selected-1)));
+            game->init(new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), new AIInput(game, (AIInput::Difficulty)selected));
         }
     } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
         m->revertState();

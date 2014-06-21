@@ -54,6 +54,11 @@ int AIInput::update(Entity& paddle) {
 
     double time = (paddleX - game->ball.x) / game->ball.dX;
 
+    if (difficulty == EASY) {
+        predictedY = game->ball.y;
+        time = 6;
+    }
+
     if (predictedY < 0) {
         if (difficulty == HARD)
             return 0;
@@ -61,7 +66,7 @@ int AIInput::update(Entity& paddle) {
             // Predict where the ball will intersect with said line
             // after bouncing off the opponent's paddle.
             double hitY = predictY(game->ball, otherX);
-            Entity ball(otherX, hitY, game->ball.w, game->ball.h, -game->ball.dX + other->dY/2, game->ball.dY);
+            Entity ball(otherX, hitY, game->ball.w, game->ball.h, game->ball.dX * -1.1, game->ball.dY + other->dY/2);
             predictedY = predictY(ball, paddleX);
             time = (otherX - game->ball.x + otherX - paddleX) / game->ball.dX;
         }
