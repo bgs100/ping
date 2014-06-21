@@ -3,6 +3,7 @@
 #include "KeyboardInput.h"
 #include "DifficultyMenu.h"
 #include "MultiplayerMenu.h"
+#include "DevConsole.h"
 
 const char *TitleScreen::labels[] = { "Singleplayer", "Multiplayer (Local)", "Multiplayer (Networked)", "Tutorial", "Credits", "Quit" };
 
@@ -39,6 +40,10 @@ void TitleScreen::handleEvent(SDL_Event &event) {
         } else if (selected == QUIT) {
             m->running = false;
         }
+    } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_BACKQUOTE) {
+        DevConsole *console = new DevConsole(m);
+        m->pushState(console);
+        console->init();
     }
 }
 
