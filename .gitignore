@@ -1,2 +1,4 @@
 ping
 server
+*.o
+*.d
