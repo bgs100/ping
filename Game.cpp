@@ -116,7 +116,7 @@ void Game::handleEvent(SDL_Event &event) {
         m->revertState();
 }
 
-void Game::handleInput(int delta) {
+void Game::handleInput() {
     Entity *paddles[] = { &player, &opponent };
     PaddleInput *inputs[] = { playerInput, opponentInput };
 
@@ -132,15 +132,12 @@ void Game::handleInput(int delta) {
             else
                 max = 0;
         }
-        paddles[i]->dY = clamp(paddles[i]->dY + change * delta / (1000.0 / 60.0), min, max);
+        paddles[i]->dY = clamp(paddles[i]->dY + change, min, max);
     }
 }
 
-void Game::update(int delta) {
-    handleInput(delta);
-
-    // For convenience:
-    double deltaD = delta / (1000.0 / 60.0);
+void Game::update() {
+    handleInput();
 
     int s1 = 0, s2 = 0;
     while (networked && SDLNet_CheckSockets(socketSet, 0)) {
@@ -162,48 +159,91 @@ void Game::update(int delta) {
         }
     }
 
-    player.y += player.dY * deltaD;
+    player.y += player.dY;
     if (player.y < 0 || player.y + player.h > m->HEIGHT) {
         player.y = clamp(player.y, 0, m->HEIGHT-player.h);
         player.dY = 0;
     }
-    opponent.y += opponent.dY * deltaD;
+    opponent.y += opponent.dY;
     if (opponent.y < 0 || opponent.y + opponent.h > m->HEIGHT) {
         opponent.y = clamp(opponent.y, 0, m->HEIGHT-opponent.h);
         opponent.dY = 0;
     }
 
-    ball.x += ball.dX * deltaD;
-    ball.y += ball.dY * deltaD;
+    double oldX = ball.x, oldY = ball.y;
+    ball.x += ball.dX;
+    ball.y += ball.dY;
     if (ball.y < 0 || ball.y + ball.h > m->HEIGHT) {
         ball.dY *= -1;
+        // Like with the paddle bouncing code below, extra distance is
+        // re-applied, so the ball travels at a consistent rate
+        // despite bouncing.
         if (ball.y < 0)
-            ball.y = 0;
+            ball.y = ball.dY - oldY;
         else
-            ball.y = m->HEIGHT - ball.h;
+            ball.y = m->HEIGHT - ball.h + ball.dY + (m->HEIGHT - ball.h) - oldY;
         Mix_PlayChannel(-1, m->bounceSound, 0);
     }
 
-    bool which;
-    if ((which = checkCollision(ball, player)) || checkCollision(ball, opponent)) {
-        ball.dX *= -1.1;
+    bool which, collisionPlayer = checkCollision(ball, player), collisionOpponent = checkCollision(ball, opponent);
+    // This is in case the ball's movement speed is greater than the
+    // width of a paddle, which would otherwise allow the ball to
+    // phase through it. It checks if the ball went completely through
+    // the paddle's area, and if so "moves" the ball along its path to
+    // the paddle's x axis and checks for collision there.
+    if ((which = (oldX > player.x + player.w && ball.x < player.x)) || (oldX < opponent.x && ball.x > opponent.x + opponent.w)) {
         if (which) {
-            ball.dY += player.dY / 2;
+            double intersectY = ball.dY/ball.dX * (player.x + player.w - oldX) + ball.y;
+            Entity testBall(player.x + player.w, intersectY, ball.w, ball.h, 0, 0);
+            collisionPlayer |= checkCollision(testBall, player);
         } else {
-            ball.dY += opponent.dY / 2;
+            double intersectY = ball.dY/ball.dX * (opponent.x - ball.w - oldX) + ball.y;
+            Entity testBall(opponent.x - ball.w, intersectY, ball.w, ball.h, 0, 0);
+            collisionOpponent |= checkCollision(testBall, opponent);
+        }
+    }
+
+    // The collided flag prevents the ball from colliding with the
+    // same paddle multiple times in one hit; this is an issue, for
+    // instance, when a paddle hits a ball with one of its smaller
+    // side edges (as the ball may not move out of the way quickly enough).
+    if (!collided && (collisionPlayer || collisionOpponent)) {
+        ball.dX = clamp(ball.dX * -1.1, -923, 923);
+        if (collisionPlayer) {
+            ball.dY = clamp(ball.dY + player.dY / 2, -747, 747);
+            if (ball.x + ball.w >= player.x && ball.x <= player.x + player.w) {
+                collided = true;
+            } else {
+                // If the ball hits the paddle fast enough to go
+                // through it, the extra distance (that it would have
+                // gone if it hadn't hit the paddle) is reapplied in
+                // the ball's new direction.
+                double dXremainder = ball.dX - oldX + player.x + player.w;
+                ball.x = player.x + player.w + dXremainder;
+            }
+        } else {
+            ball.dY = clamp(ball.dY + opponent.dY / 2, -747, 747);
+            if (ball.x + ball.w >= opponent.x && ball.x <= opponent.x + opponent.w) {
+                collided = true;
+            } else {
+                double dXremainder = ball.dX + opponent.x - ball.w - oldX;
+                ball.x = opponent.x - ball.w + dXremainder;
+            }
         }
         Mix_PlayChannel(-1, m->hitSound, 0);
+    } else if (collided && !collisionPlayer && !collisionOpponent) {
+        collided = false;
     }
 
     if (player.dY > 0)
-        player.dY = clamp(player.dY - .1*deltaD, 0, 10);
+        player.dY = clamp(player.dY - .1, 0, 10);
     else
-        player.dY = clamp(player.dY + .1*deltaD, -10, 0);
+        player.dY = clamp(player.dY + .1, -10, 0);
 
     if (opponent.dY > 0)
-        opponent.dY = clamp(opponent.dY - .1*deltaD, 0, 10);
+        opponent.dY = clamp(opponent.dY - .1, 0, 10);
     else
-        opponent.dY = clamp(opponent.dY + .1*deltaD, -10, 0);
+        opponent.dY = clamp(opponent.dY + .1, -10, 0);
 
     if (ball.x + ball.w < 0 || ball.x > m->WIDTH) {
         if (ball.x + ball.w < 0) {
@@ -232,13 +272,13 @@ void Game::update(int delta) {
     }
 }
 
-void Game::render() {
+void Game::render(double lag) {
     m->background->render(m->renderer, 0, 0);
 
     SDL_SetRenderDrawColor(m->renderer, 0xff, 0xff, 0xff, 0xff);
-    player.draw(m->renderer);
-    opponent.draw(m->renderer);
-    ball.draw(m->renderer);
+    player.render(m->renderer, lag);
+    opponent.render(m->renderer, lag);
+    ball.render(m->renderer, lag);
 
     char buf[21]; // Max number of characters for a 64-bit int in base 10.
     Texture *tScore1 = Texture::fromText(m->renderer, m->font48, itoa(score1, buf, 21), 0xff, 0xff, 0xff);

@@ -19,18 +19,19 @@ public:
     bool init(PaddleInput *p1input, PaddleInput *p2input);
     bool init(PaddleInput *p1input, const char *host);
     void handleEvent(SDL_Event& event);
-    void update(int delta);
-    void render();
+    void update();
+    void render(double lag);
 
 private:
     PaddleInput *playerInput, *opponentInput;
+    bool collided;
     int score1, score2;
     TCPsocket server;
     SDLNet_SocketSet socketSet;
     bool networked;
 
     bool netWait();
-    void handleInput(int delta);
+    void handleInput();
 };
 
 #endif

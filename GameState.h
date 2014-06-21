@@ -13,8 +13,11 @@ class GameState {
     virtual ~GameState() {}
     virtual bool init() { return true; }
     virtual void handleEvent(SDL_Event &event) {}
-    virtual void update(int delta) {}
+    virtual void update() {}
     virtual void render() {}
+    virtual void render(double lag) {
+        render();
+    }
 
  protected:
     GameManager *m;

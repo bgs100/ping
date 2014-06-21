@@ -90,11 +90,11 @@ void GameManager::handleEvents() {
     }
 }
 
-void GameManager::render() {
+void GameManager::render(double lag) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xff);
     SDL_RenderClear(renderer);
 
-    stateStack.back()->render();
+    stateStack.back()->render(lag);
 
     SDL_RenderPresent(renderer);
 }
@@ -105,15 +105,21 @@ int GameManager::run() {
     if (!init())
         return 1;
 
+    const double MS_PER_UPDATE = 1000.0 / 60;
     Uint32 last, time = SDL_GetTicks(), delta = 0;
+    double lag = 0;
 
     while (running) {
         handleEvents();
-        stateStack.back()->update(delta);
-        render();
+        while (lag >= MS_PER_UPDATE) {
+            stateStack.back()->update();
+            lag -= MS_PER_UPDATE;
+        }
+        render(lag / MS_PER_UPDATE);
         last = time;
         time = SDL_GetTicks();
         delta = time - last;
+        lag += delta;
     }
 
     cleanup();

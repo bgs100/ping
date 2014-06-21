@@ -32,7 +32,7 @@ private:
 
     bool init();
     void handleEvents();
-    void render();
+    void render(double lag);
     void cleanup();
 };
 
