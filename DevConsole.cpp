@@ -95,7 +95,7 @@ bool DevConsole::handleCommand() {
                 p1 = new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S);
             else if (elems[2].find("ai") == 0) {
                 int difficulty = atoi(elems[2].substr(2).c_str());
-                p1 = new AIInput(game, (AIInput::Difficulty)difficulty);
+                p1 = new AIInput((AIInput::Difficulty)difficulty);
             } else {
                 m->revertState();
                 return false;
@@ -106,7 +106,7 @@ bool DevConsole::handleCommand() {
                 p2 = new KeyboardInput(SDL_SCANCODE_UP, SDL_SCANCODE_DOWN);
             else if (elems[3].find("ai") == 0) {
                 int difficulty = atoi(elems[3].substr(2).c_str());
-                p2 = new AIInput(game, (AIInput::Difficulty)difficulty);
+                p2 = new AIInput((AIInput::Difficulty)difficulty);
             } else if (elems[3] == "null" && elems.size() >= 5) {
                 host = elems[4].c_str();
                 game->init(p1, host);

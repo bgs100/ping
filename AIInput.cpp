@@ -1,13 +1,14 @@
 #include "AIInput.h"
-#include "utility.h"
+#include "Entity.h"
+#include "GameManager.h"
 
-AIInput::AIInput(Game *game, Difficulty difficulty): game(game), difficulty(difficulty) {}
+AIInput::AIInput(Difficulty difficulty): difficulty(difficulty) {}
 
-double predictX(Entity& ball, double y) {
+double predictX(Entity &ball, double y) {
     return ball.dX/ball.dY * (y-ball.y) + ball.x;
 }
 
-double predictY(Entity& ball, double x) {
+double predictY(Entity &ball, double x) {
     // Check if the ball is moving the wrong direction (away from x).
     if ((ball.x < x && ball.dX <= 0) || (ball.x > x && ball.dX >= 0))
         return -1;
@@ -31,31 +32,34 @@ double predictY(Entity& ball, double x) {
     return predictedY + ball.h/2;
 }
 
-int AIInput::update(Entity& paddle) {
-    Entity *other;
-    int paddleX = paddle.x, otherX;
-    // Compensate for which side the paddle is on.
-    if (&paddle == &game->player) {
-        paddleX += paddle.w;
-        other = &game->opponent;
-        otherX = other->x - game->ball.w;
+int AIInput::update(SharedState &state, int player) {
+    Entity *paddle, *other;
+    // These compensate for which side the paddle is on.
+    int paddleX, otherX;
+
+    if (player == 0) {
+        paddle = &state.player;
+        paddleX = paddle->x + paddle->w;
+        other = &state.opponent;
+        otherX = other->x - state.ball.w;
     } else {
-        paddleX -= game->ball.w;
-        other = &game->player;
+        paddle = &state.opponent;
+        paddleX = paddle->x - state.ball.w;
+        other = &state.player;
         otherX = other->x + other->w;
     }
 
-    // Predict where the ball will intersect with the line x = paddle.x
+    // Predict where the ball will intersect with the line x = paddle->x.
     double predictedY;
     if (difficulty == MEDIUM)
-        predictedY = game->ball.dY/game->ball.dX * (paddleX-game->ball.x) + game->ball.y + game->ball.h/2;
+        predictedY = state.ball.dY/state.ball.dX * (paddleX-state.ball.x) + state.ball.y + state.ball.h/2;
     else if (difficulty >= HARD)
-        predictedY = predictY(game->ball, paddleX);
+        predictedY = predictY(state.ball, paddleX);
 
-    double time = (paddleX - game->ball.x) / game->ball.dX;
+    double time = (paddleX - state.ball.x) / state.ball.dX;
 
     if (difficulty == EASY) {
-        predictedY = game->ball.y;
+        predictedY = state.ball.y;
         time = 6;
     }
 
@@ -65,10 +69,10 @@ int AIInput::update(Entity& paddle) {
         else if (difficulty >= NOPE) {
             // Predict where the ball will intersect with said line
             // after bouncing off the opponent's paddle.
-            double hitY = predictY(game->ball, otherX);
-            Entity ball(otherX, hitY, game->ball.w, game->ball.h, game->ball.dX * -1.1, game->ball.dY + other->dY/2);
+            double hitY = predictY(state.ball, otherX);
+            Entity ball(otherX, hitY, state.ball.w, state.ball.h, state.ball.dX * -1.1, state.ball.dY + other->dY/2);
             predictedY = predictY(ball, paddleX);
-            time = (otherX - game->ball.x + otherX - paddleX) / game->ball.dX;
+            time = (otherX - state.ball.x + otherX - paddleX) / state.ball.dX;
         }
     }
 
@@ -76,8 +80,8 @@ int AIInput::update(Entity& paddle) {
     if (difficulty == INSANITY)
         time /= 100;
 
-    double requiredDY = (predictedY - (paddle.y + paddle.h/2)) / time;
-    double diff = paddle.dY - requiredDY;
+    double requiredDY = (predictedY - (paddle->y + paddle->h/2)) / time;
+    double diff = paddle->dY - requiredDY;
 
     int change = 0;
     if (diff < -1)

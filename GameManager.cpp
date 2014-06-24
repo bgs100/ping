@@ -105,8 +105,8 @@ int GameManager::run() {
     if (!init())
         return 1;
 
-    const double MS_PER_UPDATE = 1000.0 / 60;
-    Uint32 last, time = SDL_GetTicks(), delta = 0;
+    const double MS_PER_UPDATE = 1000.0 / 60.0;
+    Uint32 last, time = SDL_GetTicks();
     double lag = 0;
 
     while (running) {
@@ -118,8 +118,7 @@ int GameManager::run() {
         render(lag / MS_PER_UPDATE);
         last = time;
         time = SDL_GetTicks();
-        delta = time - last;
-        lag += delta;
+        lag += time - last;
     }
 
     cleanup();

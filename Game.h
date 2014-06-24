@@ -5,30 +5,30 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
 #include "GameState.h"
-#include "GameManager.h"
-#include "Entity.h"
+#include "StateListener.h"
+#include "SharedState.h"
 #include "PaddleInput.h"
+#include "Socket.h"
 
-class Game: public GameState {
+class Game: public GameState, public StateListener {
 public:
-    Entity ball, player, opponent;
-
     Game(GameManager *m);
     ~Game();
 
     bool init(PaddleInput *p1input, PaddleInput *p2input);
     bool init(PaddleInput *p1input, const char *host);
     void handleEvent(SDL_Event& event);
+    void onBounce();
+    void onHit();
     void update();
     void render(double lag);
 
 private:
+    SharedState state;
     PaddleInput *playerInput, *opponentInput;
-    bool collided;
-    int score1, score2;
-    TCPsocket server;
-    SDLNet_SocketSet socketSet;
+    Socket *server;
     bool networked;
+    int playerNum;
 
     bool netWait();
     void handleInput();

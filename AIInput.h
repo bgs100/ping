@@ -3,16 +3,14 @@
 #define PING_AI_INPUT_H
 
 #include "PaddleInput.h"
-#include "Game.h"
 
 class AIInput: public PaddleInput {
 public:
     enum Difficulty { EASY, MEDIUM, HARD, NOPE, INSANITY };
 
-    AIInput(Game *game, Difficulty difficulty);
-    int update(Entity& paddle);
+    AIInput(Difficulty difficulty);
+    int update(SharedState &state, int player);
 private:
-    Game *game;
     Difficulty difficulty;
 };
 

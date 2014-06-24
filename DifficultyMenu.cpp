@@ -22,7 +22,7 @@ void DifficultyMenu::handleEvent(SDL_Event &event) {
         if (selected != -1) {
             Game *game = new Game(m);
             m->pushState(game);
-            game->init(new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), new AIInput(game, (AIInput::Difficulty)selected));
+            game->init(new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), new AIInput((AIInput::Difficulty)selected));
         }
     } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
         m->revertState();

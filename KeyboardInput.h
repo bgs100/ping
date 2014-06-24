@@ -8,7 +8,7 @@
 class KeyboardInput: public PaddleInput {
 public:
     KeyboardInput(SDL_Scancode up, SDL_Scancode down);
-    int update(Entity& paddle);
+    int update(SharedState &state, int player);
 
 private:
     SDL_Scancode upKey, downKey;
