@@ -7,70 +7,54 @@
 #include "Texture.h"
 #include "utility.h"
 
-bool errorScreen(GameManager *m, const char *msg) {
-    m->swapState(new ErrorScreen(m, msg));
-    return false;
+Game::Game(GameManager *m, PaddleInput *p1input, PaddleInput *p2input)
+    : GameState(m), state(this), playerInput(p1input),
+      opponentInput(p2input), networked(false) {
 }
 
-bool errorWithScreen(GameManager *m, const char *msg) {
-    errorScreen(m, msg);
-    return error(msg);
-}
-
-Game::Game(GameManager *m) : GameState(m), state(this), server(NULL) {
-}
-
-Game::~Game() {
-    delete server;
-    delete playerInput;
-    delete opponentInput;
-}
-
-bool Game::init(PaddleInput *p1input, PaddleInput *p2input) {
-    playerInput = p1input;
-    opponentInput = p2input;
-    networked = false;
-    return true;
-}
-
-bool Game::init(PaddleInput *p1input, const char *host) {
-    playerInput = p1input;
-    opponentInput = NULL;
-
-    networked = true;
-    
+Game::Game(GameManager *m, PaddleInput *p1input, const char *host)
+    : GameState(m), playerInput(p1input), networked(true) {
     IPaddress ip;
     if (SDLNet_ResolveHost(&ip, host, 5556) != 0) {
-        SDLerror("SDLNet_ResolveHost");
         std::stringstream ss;
         ss << "Failed to resolve host: " << host;
-        return errorScreen(m, ss.str().c_str());
+        errorScreen(ss.str().c_str());
+        return;
     }
 
     TCPsocket serverSock = SDLNet_TCP_Open(&ip);
     if (serverSock == NULL) {
-        SDLerror("SDLNet_TCP_Open");
-        return errorScreen(m, "Failed to open connection.");
+        errorScreen("Failed to open connection.");
+        return;
     }
 
     server = new Socket(serverSock);
     if (server->error) {
-        SDLerror("SDLNet_AllocSocketSet");
-        return errorScreen(m, "Failed to allocate socket set.");
+        errorScreen("Failed to allocate socket set.");
+        return;
     }
 
-    return netWait();
-}
-
-bool Game::netWait() {
-    if (server->ready(10000) < 1)
-        return errorWithScreen(m, "Connection to server timed out.");
+    if (server->ready(10000) < 1) {
+        errorScreen("Connection to server timed out.");
+        return;
+    }
 
     playerNum = server->getByte();
     if (server->error)
-        return errorWithScreen(m, "Server disconnected.");
+        errorScreen("Server disconnected.");
+}
 
-    return true;
+Game::~Game() {
+    delete playerInput;
+    if (networked)
+        delete server;
+    else
+        delete opponentInput;
+}
+
+void Game::errorScreen(const char *msg) {
+    m->pushState(new ErrorScreen(m, msg));
+    valid = false;
 }
 
 void Game::handleEvent(SDL_Event &event) {
@@ -142,7 +126,7 @@ void Game::update() {
     }
 
     if (server->error) {
-        errorWithScreen(m, "Host disconnected.");
+        errorScreen("Host disconnected.");
         return;
     }
 

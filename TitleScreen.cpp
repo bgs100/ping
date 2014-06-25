@@ -7,16 +7,13 @@
 
 const char *TitleScreen::labels[] = { "Singleplayer", "Multiplayer (Local)", "Multiplayer (Networked)", "Tutorial", "Credits", "Quit" };
 
-TitleScreen::TitleScreen(GameManager *m) : GameState(m) {}
+TitleScreen::TitleScreen(GameManager *m)
+    : GameState(m), titleText(Texture::fromText(m->renderer, m->font64, "PiNG", 0xff, 0xff, 0xff)),
+      buttonMenu(m->renderer, m->font32, labels, END_BUTTON, 100, 250, 21) {
+}
 
 TitleScreen::~TitleScreen() {
     delete titleText;
-}
-
-bool TitleScreen::init() {
-    titleText = Texture::fromText(m->renderer, m->font64, "PiNG", 0xff, 0xff, 0xff);
-    buttonMenu.init(m->renderer, m->font32, labels, END_BUTTON, 100, 250, 21);
-    return true;
 }
 
 void TitleScreen::handleEvent(SDL_Event &event) {
@@ -25,26 +22,16 @@ void TitleScreen::handleEvent(SDL_Event &event) {
     } else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
         int selected = buttonMenu.getSelected();
         // TODO: Add in code for the other buttons.
-        if (selected == SINGLEPLAYER) {
-            DifficultyMenu *menu = new DifficultyMenu(m);
-            m->pushState(menu);
-            menu->init();
-        } else if (selected == MULTIPLAYER_LOCAL) {
-            Game *game = new Game(m);
-            m->pushState(game);
-            game->init(new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), new KeyboardInput(SDL_SCANCODE_UP, SDL_SCANCODE_DOWN));
-        } else if (selected == MULTIPLAYER_NET) {
-            MultiplayerMenu *menu = new MultiplayerMenu(m);
-            m->pushState(menu);
-            menu->init();
-        } else if (selected == QUIT) {
+        if (selected == SINGLEPLAYER)
+            m->pushState(new DifficultyMenu(m));
+        else if (selected == MULTIPLAYER_LOCAL)
+            m->pushState(new Game(m, new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), new KeyboardInput(SDL_SCANCODE_UP, SDL_SCANCODE_DOWN)));
+        else if (selected == MULTIPLAYER_NET)
+            m->pushState(new MultiplayerMenu(m));
+        else if (selected == QUIT)
             m->running = false;
-        }
-    } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_BACKQUOTE) {
-        DevConsole *console = new DevConsole(m);
-        m->pushState(console);
-        console->init();
-    }
+    } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_BACKQUOTE)
+        m->pushState(new DevConsole(m));
 }
 
 void TitleScreen::render() {

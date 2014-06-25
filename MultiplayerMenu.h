@@ -10,7 +10,6 @@ public:
     MultiplayerMenu(GameManager *m);
     ~MultiplayerMenu();
     
-    bool init();
     void handleEvent(SDL_Event &event);
     void render();
     void cleanup();

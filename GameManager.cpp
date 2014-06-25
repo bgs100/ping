@@ -53,11 +53,15 @@ bool GameManager::init() {
 
     Mix_AllocateChannels(16);
 
-    TitleScreen *titleScreen = new TitleScreen(this);
-    pushState(titleScreen);
-    titleScreen->init();
+    pushState(new TitleScreen(this));
 
     return true;
+}
+
+GameState *GameManager::getState() {
+    while (!stateStack.back()->valid)
+        revertState();
+    return stateStack.back();
 }
 
 void GameManager::pushState(GameState *state) {
@@ -74,19 +78,24 @@ void GameManager::revertState() {
     delete popState();
 }
 
-void GameManager::swapState(GameState *state) {
-    revertState();
-    pushState(state);
-}
-
 void GameManager::handleEvents() {
     static SDL_Event event;
+
+    // This is something of a hack, to prevent a new state that called
+    // SDL_StartTextInput() from receiving a new SDL_TEXTINPUT event
+    // with the same key press which, as an SDL_KEYDOWN event, caused
+    // the new state to be created in the first place; this can result
+    // in, for example, an unwanted initial character in a textbox
+    // (this happens with DevConsole, which is created by TitleScreen
+    // after the backtick key is pressed).
+    GameState *state = getState();
 
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT)
             running = false;
-        else
-            stateStack.back()->handleEvent(event);
+        else {
+            state->handleEvent(event);
+        }
     }
 }
 
@@ -94,7 +103,7 @@ void GameManager::render(double lag) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xff);
     SDL_RenderClear(renderer);
 
-    stateStack.back()->render(lag);
+    getState()->render(lag);
 
     SDL_RenderPresent(renderer);
 }
@@ -112,7 +121,7 @@ int GameManager::run() {
     while (running) {
         handleEvents();
         while (lag >= MS_PER_UPDATE) {
-            stateStack.back()->update();
+            getState()->update();
             lag -= MS_PER_UPDATE;
         }
         render(lag / MS_PER_UPDATE);

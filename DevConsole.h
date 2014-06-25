@@ -9,7 +9,7 @@ class DevConsole: public GameState {
 public:
     DevConsole(GameManager *m);
     ~DevConsole();
-    bool init();
+
     void handleEvent(SDL_Event &event);
     void render();
 

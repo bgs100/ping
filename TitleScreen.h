@@ -11,7 +11,6 @@ class TitleScreen: public GameState {
 public:
     TitleScreen(GameManager *m);
     ~TitleScreen();
-    bool init();
     void handleEvent(SDL_Event &event);
     void render();
 

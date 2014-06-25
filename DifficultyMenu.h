@@ -8,7 +8,7 @@
 class DifficultyMenu: public GameState {
 public:
     DifficultyMenu(GameManager *m);
-    bool init();
+
     void handleEvent(SDL_Event &event);
     void render();
 

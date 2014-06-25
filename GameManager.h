@@ -21,10 +21,10 @@ public:
     Mix_Chunk *bounceSound, *hitSound;
     bool running;
 
+    GameState *getState();
     void pushState(GameState *state);
     GameState *popState();
     void revertState();
-    void swapState(GameState *state);
     int run();
 
 private:

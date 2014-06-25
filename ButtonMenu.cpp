@@ -1,9 +1,16 @@
 #include "ButtonMenu.h"
 #include "Texture.h"
 
-#include <iostream>
-
-ButtonMenu::ButtonMenu() : selectedIndex(-1) {}
+// horizCenter is false by default (see ButtonMenu.h)
+ButtonMenu::ButtonMenu(SDL_Renderer *renderer, TTF_Font *font, const char *labels[], int numLabels, int x, int y, int spacing, bool horizCenter)
+    : selectedIndex(-1), fontHeight(TTF_FontHeight(font)), numButtons(numLabels), menuX(x), menuY(y), spacing(spacing), centered(horizCenter) {
+    selected = new Texture *[numLabels];
+    unselected = new Texture *[numLabels];
+    for (int i = 0; i < numButtons; i++) {
+        selected[i] = Texture::fromText(renderer, font, labels[i], 0xff, 0xff, 0xff);
+        unselected[i] = Texture::fromText(renderer, font, labels[i], 0xaa, 0xaa, 0xaa);
+    }
+}
 
 ButtonMenu::~ButtonMenu() {
     for (int i = 0; i < numButtons; i++) {
@@ -13,24 +20,6 @@ ButtonMenu::~ButtonMenu() {
 
     delete[] selected;
     delete[] unselected;
-}
-
-// horizCenter is false by default (see ButtonMenu.h)
-void ButtonMenu::init(SDL_Renderer *renderer, TTF_Font *font, const char *labels[], int numLabels, int x, int y, int spacing, bool horizCenter) {
-    fontHeight = TTF_FontHeight(font);
-    numButtons = numLabels;
-
-    menuX = x;
-    menuY = y;
-    this->spacing = spacing;
-    centered = horizCenter;
-
-    selected = new Texture *[numLabels];
-    unselected = new Texture *[numLabels];
-    for (int i = 0; i < numButtons; i++) {
-        selected[i] = Texture::fromText(renderer, font, labels[i], 0xff, 0xff, 0xff);
-        unselected[i] = Texture::fromText(renderer, font, labels[i], 0xaa, 0xaa, 0xaa);
-    }
 }
 
 void ButtonMenu::render(SDL_Renderer *renderer) {

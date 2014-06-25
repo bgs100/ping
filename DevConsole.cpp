@@ -27,15 +27,11 @@ std::vector<std::string> split(const std::string &s, char delim) {
 
 DevConsole::DevConsole(GameManager *m) : GameState(m), inputTexture(NULL) {
     inputText[0] = '\0';
+    SDL_StartTextInput();
 }
 
 DevConsole::~DevConsole() {
     delete inputTexture;
-}
-
-bool DevConsole::init() {
-    SDL_StartTextInput();
-    return true;
 }
 
 void DevConsole::handleEvent(SDL_Event &event) {
@@ -76,8 +72,6 @@ void DevConsole::handleEvent(SDL_Event &event) {
     }
 }
 
-
-
 bool DevConsole::handleCommand() {
     std::vector<std::string> elems;
     std::string input(inputText);
@@ -87,9 +81,7 @@ bool DevConsole::handleCommand() {
         return false;
     if (elems[0] == "push" && elems.size() >= 2) {
         if (elems[1] == "game" && elems.size() >= 4) {
-            Game *game = new Game(m);
             PaddleInput *p1, *p2;
-            m->pushState(game);
 
             if (elems[2] == "keyboard")
                 p1 = new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S);
@@ -109,14 +101,14 @@ bool DevConsole::handleCommand() {
                 p2 = new AIInput((AIInput::Difficulty)difficulty);
             } else if (elems[3] == "null" && elems.size() >= 5) {
                 host = elems[4].c_str();
-                game->init(p1, host);
+                m->pushState(new Game(m, p1, host));
             } else {
                 host = elems[3].c_str();
-                game->init(p1, host);
+                m->pushState(new Game(m, p1, host));
             }
 
             if (host == NULL)
-                game->init(p1, p2);
+                m->pushState(new Game(m, p1, p2));
 
             return true;
         }

@@ -9,9 +9,10 @@ class GameManager;
 
 class GameState {
  public:
-    GameState(GameManager *m) : m(m) {}
+    bool valid;
+
+    GameState(GameManager *m) : valid(true), m(m) {}
     virtual ~GameState() {}
-    virtual bool init() { return true; }
     virtual void handleEvent(SDL_Event &event) {}
     virtual void update() {}
     virtual void render() {}

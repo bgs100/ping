@@ -8,17 +8,15 @@ Texture *MultiplayerMenu::prompt = NULL;
 
 MultiplayerMenu::MultiplayerMenu(GameManager *m) : GameState(m), inputTexture(NULL) {
     inputText[0] = '\0';
+
+    SDL_StartTextInput();
+
+    if (prompt == NULL)
+        prompt = Texture::fromText(m->renderer, m->font24, "Enter server address as domain:port (default 5556)", 0xff, 0xff, 0xff);
 }
 
 MultiplayerMenu::~MultiplayerMenu() {
     delete inputTexture;
-}
-
-bool MultiplayerMenu::init() {
-    SDL_StartTextInput();
-    if (prompt == NULL)
-        prompt = Texture::fromText(m->renderer, m->font24, "Enter server address as domain:port (default 5556)", 0xff, 0xff, 0xff);
-    return true;
 }
 
 void MultiplayerMenu::handleEvent(SDL_Event &event) {
@@ -39,9 +37,7 @@ void MultiplayerMenu::handleEvent(SDL_Event &event) {
             renderText = true;
         } else if (key == SDLK_RETURN) {
             // TODO: Parse for a custom port.
-            Game *game = new Game(m);
-            m->pushState(game);
-            game->init(new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), inputText);
+            m->pushState(new Game(m, new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), inputText));
         } else if (key == SDLK_ESCAPE) {
             m->revertState();
         }

@@ -12,11 +12,10 @@
 
 class Game: public GameState, public StateListener {
 public:
-    Game(GameManager *m);
+    Game(GameManager *m, PaddleInput *p1input, PaddleInput *p2input);
+    Game(GameManager *m, PaddleInput *p1input, const char *host);
     ~Game();
 
-    bool init(PaddleInput *p1input, PaddleInput *p2input);
-    bool init(PaddleInput *p1input, const char *host);
     void handleEvent(SDL_Event& event);
     void onBounce();
     void onHit();
@@ -30,7 +29,7 @@ private:
     bool networked;
     int playerNum;
 
-    bool netWait();
+    void errorScreen(const char *msg);
     void handleInput();
 };
 

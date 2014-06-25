@@ -8,9 +8,9 @@
 
 class ButtonMenu {
 public:
-    ButtonMenu();
+    ButtonMenu(SDL_Renderer *renderer, TTF_Font *font, const char *labels[], int numLabels, int x, int y, int spacing, bool horizCenter=false);
     ~ButtonMenu();
-    void init(SDL_Renderer *renderer, TTF_Font *font, const char *labels[], int numLabels, int x, int y, int spacing, bool horizCenter=false);
+
     void render(SDL_Renderer *renderer);
     int getButton(int x, int y);
     void selectButton(int x, int y);
