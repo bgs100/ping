@@ -7,15 +7,15 @@
 #include "Texture.h"
 #include "utility.h"
 
-Game::Game(GameManager *m, PaddleInput *p1input, PaddleInput *p2input)
+// demo is false by default (see Game.h).
+Game::Game(GameManager *m, PaddleInput *p1input, PaddleInput *p2input, bool demo)
     : GameState(m), state(this), playerInput(p1input),
-      opponentInput(p2input), networked(false) {
+      opponentInput(p2input), networked(false), demo(demo) {
 }
 
 Game::Game(GameManager *m, PaddleInput *p1input, const char *host)
-    : GameState(m), playerInput(p1input), server(NULL), networked(true) {
+    : GameState(m), playerInput(p1input), server(NULL), networked(true), demo(false) {
     IPaddress ip;
-
     if (SDLNet_ResolveHost(&ip, host, 5556) != 0) {
         std::stringstream ss;
         ss << "Failed to resolve host: " << host;
@@ -59,11 +59,13 @@ void Game::errorScreen(const char *msg) {
 }
 
 void Game::onBounce() {
-    Mix_PlayChannel(-1, m->bounceSound, 0);
+    if (!demo)
+        Mix_PlayChannel(-1, m->bounceSound, 0);
 }
 
 void Game::onHit() {
-    Mix_PlayChannel(-1, m->hitSound, 0);
+    if (!demo)
+        Mix_PlayChannel(-1, m->hitSound, 0);
 }
 
 void Game::update() {

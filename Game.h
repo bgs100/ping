@@ -12,7 +12,7 @@
 
 class Game: public GameState, public StateListener {
 public:
-    Game(GameManager *m, PaddleInput *p1input, PaddleInput *p2input);
+    Game(GameManager *m, PaddleInput *p1input, PaddleInput *p2input, bool demo=false);
     Game(GameManager *m, PaddleInput *p1input, const char *host);
     ~Game();
 
@@ -27,6 +27,7 @@ private:
     Socket *server;
     bool networked;
     int playerNum;
+    bool demo;
 
     void errorScreen(const char *msg);
     void handleInput();

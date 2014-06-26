@@ -6,7 +6,7 @@
 
 class AIInput: public PaddleInput {
 public:
-    enum Difficulty { EASY, MEDIUM, HARD, NOPE, INSANITY };
+    enum Difficulty { EASY, MEDIUM, HARD, NOPE, INSANITY, NUM_DIFFICULTY };
 
     AIInput(Difficulty difficulty);
     int update(SharedState &state, int player);

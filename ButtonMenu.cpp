@@ -8,7 +8,7 @@ ButtonMenu::ButtonMenu(SDL_Renderer *renderer, TTF_Font *font, const char *label
     unselected = new Texture *[numLabels];
     for (int i = 0; i < numButtons; i++) {
         selected[i] = Texture::fromText(renderer, font, labels[i], 0xff, 0xff, 0xff);
-        unselected[i] = Texture::fromText(renderer, font, labels[i], 0xaa, 0xaa, 0xaa);
+        unselected[i] = Texture::fromText(renderer, font, labels[i], 0xbb, 0xbb, 0xbb);
     }
 }
 

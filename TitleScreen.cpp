@@ -1,6 +1,7 @@
 #include "TitleScreen.h"
 #include "GameManager.h"
 #include "KeyboardInput.h"
+#include "AIInput.h"
 #include "DifficultyMenu.h"
 #include "MultiplayerMenu.h"
 #include "DevConsole.h"
@@ -9,7 +10,9 @@ const char *TitleScreen::labels[] = { "Singleplayer", "Multiplayer (Local)", "Mu
 
 TitleScreen::TitleScreen(GameManager *m)
     : GameState(m), titleText(Texture::fromText(m->renderer, m->font64, "PiNG", 0xff, 0xff, 0xff)),
-      buttonMenu(m->renderer, m->font32, labels, END_BUTTON, 100, 250, 21) {
+      buttonMenu(m->renderer, m->font32, labels, END_BUTTON, 100, 250, 21),
+      backgroundGame(m, new AIInput((AIInput::Difficulty)(rand() % AIInput::NUM_DIFFICULTY)),
+                     new AIInput((AIInput::Difficulty)(rand() % AIInput::NUM_DIFFICULTY)), true) {
 }
 
 TitleScreen::~TitleScreen() {
@@ -34,8 +37,20 @@ void TitleScreen::handleEvent(SDL_Event &event) {
         m->pushState(new DevConsole(m));
 }
 
-void TitleScreen::render() {
-    m->background->render(m->renderer, 0, 0);
+void TitleScreen::update() {
+    backgroundGame.update();
+}
+
+void TitleScreen::render(double lag) {
+    backgroundGame.render(lag);
+
+    SDL_SetRenderDrawBlendMode(m->renderer, SDL_BLENDMODE_BLEND);
+
+    SDL_SetRenderDrawColor(m->renderer, 0, 0, 0, 0xaa);
+    SDL_RenderFillRect(m->renderer, NULL);
+
+    SDL_SetRenderDrawBlendMode(m->renderer, SDL_BLENDMODE_NONE);
+
     titleText->render(m->renderer, 100, 50);
     buttonMenu.render(m->renderer);
 }

@@ -4,6 +4,7 @@
 
 #include <SDL2/SDL.h>
 #include "GameState.h"
+#include "Game.h"
 #include "Texture.h"
 #include "ButtonMenu.h"
 
@@ -12,7 +13,8 @@ public:
     TitleScreen(GameManager *m);
     ~TitleScreen();
     void handleEvent(SDL_Event &event);
-    void render();
+    void update();
+    void render(double lag);
 
 private:
     enum Button { SINGLEPLAYER, MULTIPLAYER_LOCAL, MULTIPLAYER_NET, TUTORIAL, CREDITS, QUIT, END_BUTTON };
@@ -20,6 +22,7 @@ private:
 
     Texture *titleText;
     ButtonMenu buttonMenu;
+    Game backgroundGame;
 };
 
 #endif
