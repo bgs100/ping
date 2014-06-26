@@ -19,7 +19,7 @@ ErrorScreen::~ErrorScreen() {
 
 void ErrorScreen::handleEvent(SDL_Event &event) {
     if (event.type == SDL_KEYDOWN)
-        m->revertState();
+        valid = false;
 }
 
 void ErrorScreen::render() {

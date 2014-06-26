@@ -16,7 +16,6 @@ public:
     Game(GameManager *m, PaddleInput *p1input, const char *host);
     ~Game();
 
-    void handleEvent(SDL_Event& event);
     void onBounce();
     void onHit();
     void update();

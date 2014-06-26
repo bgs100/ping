@@ -31,6 +31,7 @@ DevConsole::DevConsole(GameManager *m) : GameState(m), inputTexture(NULL) {
 }
 
 DevConsole::~DevConsole() {
+    SDL_StopTextInput();
     delete inputTexture;
 }
 
@@ -55,8 +56,6 @@ void DevConsole::handleEvent(SDL_Event &event) {
                 inputText[0] = '\0';
                 renderText = true;
             }
-        } else if (key == SDLK_ESCAPE) {
-            m->revertState();
         }
     } else if (event.type == SDL_TEXTINPUT) {
         char *text = event.text.text;
@@ -88,10 +87,8 @@ bool DevConsole::handleCommand() {
             else if (elems[2].find("ai") == 0) {
                 int difficulty = atoi(elems[2].substr(2).c_str());
                 p1 = new AIInput((AIInput::Difficulty)difficulty);
-            } else {
-                m->revertState();
+            } else
                 return false;
-            }
 
             const char *host = NULL;
             if (elems[3] == "keyboard")

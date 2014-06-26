@@ -13,8 +13,9 @@ Game::Game(GameManager *m, PaddleInput *p1input, PaddleInput *p2input)
 }
 
 Game::Game(GameManager *m, PaddleInput *p1input, const char *host)
-    : GameState(m), playerInput(p1input), networked(true) {
+    : GameState(m), playerInput(p1input), server(NULL), networked(true) {
     IPaddress ip;
+
     if (SDLNet_ResolveHost(&ip, host, 5556) != 0) {
         std::stringstream ss;
         ss << "Failed to resolve host: " << host;
@@ -55,11 +56,6 @@ Game::~Game() {
 void Game::errorScreen(const char *msg) {
     m->pushState(new ErrorScreen(m, msg));
     valid = false;
-}
-
-void Game::handleEvent(SDL_Event &event) {
-    if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
-        m->revertState();
 }
 
 void Game::onBounce() {

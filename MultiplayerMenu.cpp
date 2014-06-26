@@ -16,6 +16,7 @@ MultiplayerMenu::MultiplayerMenu(GameManager *m) : GameState(m), inputTexture(NU
 }
 
 MultiplayerMenu::~MultiplayerMenu() {
+    SDL_StopTextInput();
     delete inputTexture;
 }
 
@@ -38,8 +39,6 @@ void MultiplayerMenu::handleEvent(SDL_Event &event) {
         } else if (key == SDLK_RETURN) {
             // TODO: Parse for a custom port.
             m->pushState(new Game(m, new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), inputText));
-        } else if (key == SDLK_ESCAPE) {
-            m->revertState();
         }
     } else if (event.type == SDL_TEXTINPUT) {
         char *text = event.text.text;

@@ -93,9 +93,11 @@ void GameManager::handleEvents() {
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT)
             running = false;
-        else {
+        else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE && stateStack.size() > 1) {
+            revertState();
+            state = getState();
+        } else
             state->handleEvent(event);
-        }
     }
 }
 
