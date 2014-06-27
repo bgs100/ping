@@ -1,9 +1,10 @@
+#include <algorithm>
 #include "Textbox.h"
 
 #include <iostream>
 
 Textbox::Textbox(TTF_Font *font, int x, int y, int w)
-    : font(font), x(x), y(y), w(w), h(TTF_FontHeight(font)), texture(NULL), renderText(false), pos(0) {
+    : font(font), x(x), y(y), w(w), h(TTF_FontHeight(font)), texture(NULL), renderText(false), pos(0), offsetX(0) {
     SDL_StartTextInput();
 }
 
@@ -76,8 +77,17 @@ void Textbox::render(SDL_Renderer *renderer) {
         width -= start;
     }
 
-    SDL_RenderDrawLine(renderer, x + 9 + start, y + h - 4, x + 9 + start + width, y + h - 4);
+    if (start + width - w + 20 >= offsetX)
+        offsetX = start + width - w + 20;
+    else if (start < offsetX)
+        offsetX = start;
 
-    if (texture != NULL)
-        texture->render(renderer, x + 10, y);
+    if (texture != NULL) {
+        int fullSize;
+        TTF_SizeText(font, text.c_str(), &fullSize, NULL);
+        offsetX = std::max(0, std::min(offsetX, fullSize - w + 20 + (pos == text.size() && texture->w > w - 20 ? width : 0)));
+        texture->render(renderer, offsetX, 0, std::min(texture->w - offsetX, w - 20), texture->h, x + 10, y);
+    }
+
+    SDL_RenderDrawLine(renderer, x + 9 + start - offsetX, y + h - 4, x + 9 + start + width - offsetX, y + h - 4);
 }

@@ -25,6 +25,7 @@ private:
     Texture *texture;
     bool renderText;
     unsigned int pos;
+    int offsetX;
 };
 
 #endif

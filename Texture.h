@@ -9,7 +9,9 @@ class Texture {
 public:
     Texture(SDL_Texture *texture, int w=-1, int h=-1);
     ~Texture();
+
     void render(SDL_Renderer *renderer, int x, int y);
+    void render(SDL_Renderer *renderer, int srcX, int srcY, int w, int h, int dstX, int dstY);
 
     int w, h;
 

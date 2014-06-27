@@ -20,6 +20,12 @@ void Texture::render(SDL_Renderer *renderer, int x, int y) {
     SDL_RenderCopy(renderer, texture, NULL, &dst);
 }
 
+void Texture::render(SDL_Renderer *renderer, int srcX, int srcY, int w, int h, int dstX, int dstY) {
+    SDL_Rect src = { srcX, srcY, w, h };
+    SDL_Rect dst = { dstX, dstY, w, h };
+    SDL_RenderCopy(renderer, texture, &src, &dst);
+}
+
 Texture *Texture::fromSurface(SDL_Renderer *renderer, SDL_Surface *surface) {
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (texture == NULL)
