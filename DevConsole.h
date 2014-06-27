@@ -2,22 +2,21 @@
 #ifndef PING_DEV_CONSOLE_H
 #define PING_DEV_CONSOLE_H
 
+#include <string>
 #include "GameState.h"
-#include "Texture.h"
+#include "Textbox.h"
 
 class DevConsole: public GameState {
 public:
     DevConsole(GameManager *m);
-    ~DevConsole();
 
     void handleEvent(SDL_Event &event);
     void render();
 
 private:
-    char inputText[512];
-    Texture *inputTexture;
+    Textbox commandInput;
 
-    bool handleCommand();
+    bool handleCommand(std::string input);
 };
 
 #endif
