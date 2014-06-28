@@ -135,7 +135,7 @@ void Game::update() {
 }
 
 void Game::render(double lag) {
-    m->background->render(m->renderer, 0, 0);
+    m->background.render(m->renderer, 0, 0);
 
     SDL_SetRenderDrawColor(m->renderer, 0xff, 0xff, 0xff, 0xff);
     state.player.render(m->renderer, lag);
@@ -143,10 +143,8 @@ void Game::render(double lag) {
     state.ball.render(m->renderer, lag);
 
     char buf[21]; // Max number of characters for a 64-bit int in base 10.
-    Texture *tScore1 = Texture::fromText(m->renderer, m->font48, itoa(state.score1, buf, 21), 0xff, 0xff, 0xff);
-    Texture *tScore2 = Texture::fromText(m->renderer, m->font48, itoa(state.score2, buf, 21), 0xff, 0xff, 0xff);
-    tScore1->render(m->renderer, m->WIDTH/4 - tScore1->w/2, 40);
-    tScore2->render(m->renderer, m->WIDTH*3/4 - tScore2->w/2, 40);
-    delete tScore1;
-    delete tScore2;
+    Texture tScore1 = Texture::fromText(m->renderer, m->font48, itoa(state.score1, buf, 21), 0xff, 0xff, 0xff);
+    Texture tScore2 = Texture::fromText(m->renderer, m->font48, itoa(state.score2, buf, 21), 0xff, 0xff, 0xff);
+    tScore1.render(m->renderer, m->WIDTH/4 - tScore1.w/2, 40);
+    tScore2.render(m->renderer, m->WIDTH*3/4 - tScore2.w/2, 40);
 }

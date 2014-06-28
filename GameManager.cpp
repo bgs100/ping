@@ -150,8 +150,6 @@ void GameManager::cleanup() {
     TTF_CloseFont(font24);
     TTF_CloseFont(font16);
 
-    delete background;
-
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
 

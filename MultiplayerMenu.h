@@ -15,7 +15,7 @@ public:
     void cleanup();
 
 private:
-    static Texture *prompt;
+    static Texture prompt;
     Textbox hostInput;
 };
 

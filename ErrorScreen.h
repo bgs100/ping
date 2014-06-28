@@ -8,14 +8,13 @@
 class ErrorScreen: public GameState {
 public:
     ErrorScreen(GameManager *m, const char *msg);
-    ~ErrorScreen();
 
     void handleEvent(SDL_Event &event);
     void render();
 
 private:
-    static Texture *errorText, *continueText;
-    Texture *text;
+    static Texture errorText, continueText;
+    Texture text;
 };
 
 #endif

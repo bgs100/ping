@@ -22,7 +22,7 @@ public:
 private:
     TTF_Font *font;
     int x, y, w, h;
-    Texture *texture;
+    Texture texture;
     bool renderText;
     unsigned int pos;
     int offsetX;

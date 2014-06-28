@@ -11,7 +11,7 @@
 class TitleScreen: public GameState {
 public:
     TitleScreen(GameManager *m);
-    ~TitleScreen();
+
     void handleEvent(SDL_Event &event);
     void update();
     void render(double lag);
@@ -20,7 +20,7 @@ private:
     enum Button { SINGLEPLAYER, MULTIPLAYER_LOCAL, MULTIPLAYER_NET, TUTORIAL, CREDITS, QUIT, END_BUTTON };
     static const char *labels[];
 
-    Texture *titleText;
+    Texture titleText;
     ButtonMenu buttonMenu;
     Game backgroundGame;
 };

@@ -17,7 +17,7 @@ public:
     int getSelected();
 
 private:
-    Texture **selected, **unselected;
+    Texture *selected, *unselected;
     int selectedIndex, fontHeight, numButtons, menuX, menuY, spacing;
     bool centered;
 };

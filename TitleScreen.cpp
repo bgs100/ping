@@ -15,10 +15,6 @@ TitleScreen::TitleScreen(GameManager *m)
                      new AIInput((AIInput::Difficulty)(rand() % AIInput::NUM_DIFFICULTY)), true) {
 }
 
-TitleScreen::~TitleScreen() {
-    delete titleText;
-}
-
 void TitleScreen::handleEvent(SDL_Event &event) {
     if (event.type == SDL_MOUSEMOTION) {
         buttonMenu.selectButton(event.motion.x, event.motion.y);
@@ -51,6 +47,6 @@ void TitleScreen::render(double lag) {
 
     SDL_SetRenderDrawBlendMode(m->renderer, SDL_BLENDMODE_NONE);
 
-    titleText->render(m->renderer, 100, 50);
+    titleText.render(m->renderer, 100, 50);
     buttonMenu.render(m->renderer);
 }

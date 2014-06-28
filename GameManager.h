@@ -16,7 +16,7 @@ public:
 
     SDL_Window *window;
     SDL_Renderer *renderer;
-    Texture *background;
+    Texture background;
     TTF_Font *font16, *font24, *font32, *font48, *font64;
     Mix_Chunk *bounceSound, *hitSound;
     bool running;

@@ -1,6 +1,6 @@
 CXX=g++
 CXXFLAGS=-Wall
-CPPFLAGS=-MD -MP
+CPPFLAGS=-MD -MP -std=c++11
 LDFLAGS=-Wall
 PING_LIBS=-lSDL2 -lSDL2_ttf -lSDL2_mixer -lSDL2_net
 PING_SRCS=GameManager.cpp Game.cpp SharedState.cpp ButtonMenu.cpp Textbox.cpp TitleScreen.cpp DifficultyMenu.cpp MultiplayerMenu.cpp DevConsole.cpp ErrorScreen.cpp KeyboardInput.cpp AIInput.cpp Texture.cpp Socket.cpp utility.cpp
