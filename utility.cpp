@@ -74,8 +74,3 @@ char *netReadLine(TCPsocket sock) {
     SDLNet_TCP_Recv(sock, buffer+i, 1);
     return buffer;
 }
-
-bool checkCollision(Entity a, Entity b) {
-    return (a.y + a.h >= b.y && a.y <= b.y + b.h &&
-            a.x + a.w >= b.x && a.x <= b.x + b.w);
-}

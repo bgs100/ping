@@ -14,6 +14,7 @@ Textbox::~Textbox() {
 
 void Textbox::clear() {
     text.erase();
+    pos = 0;
     renderText = true;
 }
 

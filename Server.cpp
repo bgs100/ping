@@ -9,8 +9,7 @@
 Server::Server() : bounce(false), hit(false), state(this) {
     clients[0] = NULL;
     clients[1] = NULL;
-    state.ball.dX = 0;
-    state.ball.dY = 0;
+    state.ball.v = 0;
 }
 
 bool Server::init() {
@@ -82,8 +81,7 @@ void Server::handleActivity() {
                 SDLNet_TCP_DelSocket(socketSet, clients[i]);
                 SDLNet_TCP_Close(clients[i]);
                 clients[i] = NULL;
-                state.ball.dX = 0;
-                state.ball.dY = 0;
+                state.ball.v = 0;
             } else if (buffer[0] == Client::MOVE) {
                 inputs[i] += buffer[1];
             }
@@ -94,7 +92,7 @@ void Server::handleActivity() {
 
     for (int i = 0; i < 2; i++) {
         if (clients[i] != NULL) {
-            char buf[114];
+            char buf[138];
             int pos = 0;
             buf[pos] = Server::STATE;
 
@@ -103,21 +101,24 @@ void Server::handleActivity() {
             *((Uint64 *)&buf[pos+=1]) = hton64(state.score1);
             *((double *)&buf[pos+=8]) = htond(state.player.x);
             *((double *)&buf[pos+=8]) = htond(state.player.y);
-            *((double *)&buf[pos+=8]) = htond(state.player.dX);
-            *((double *)&buf[pos+=8]) = htond(state.player.dY);
+            *((double *)&buf[pos+=8]) = htond(state.player.theta);
+            *((double *)&buf[pos+=8]) = htond(state.player.v);
+            *((double *)&buf[pos+=8]) = htond(state.player.orientation);
 
             *((Uint64 *)&buf[pos+=8]) = hton64(state.score2);
             *((double *)&buf[pos+=8]) = htond(state.opponent.x);
             *((double *)&buf[pos+=8]) = htond(state.opponent.y);
-            *((double *)&buf[pos+=8]) = htond(state.opponent.dX);
-            *((double *)&buf[pos+=8]) = htond(state.opponent.dY);
+            *((double *)&buf[pos+=8]) = htond(state.opponent.theta);
+            *((double *)&buf[pos+=8]) = htond(state.opponent.v);
+            *((double *)&buf[pos+=8]) = htond(state.opponent.orientation);
             
             *((double *)&buf[pos+=8]) = htond(state.ball.x);
             *((double *)&buf[pos+=8]) = htond(state.ball.y);
-            *((double *)&buf[pos+=8]) = htond(state.ball.dX);
-            *((double *)&buf[pos+=8]) = htond(state.ball.dY);
+            *((double *)&buf[pos+=8]) = htond(state.ball.theta);
+            *((double *)&buf[pos+=8]) = htond(state.ball.v);
+            *((double *)&buf[pos+=8]) = htond(state.ball.orientation);
         
-            SDLNet_TCP_Send(clients[i], buf, 114);
+            SDLNet_TCP_Send(clients[i], buf, 138);
         }
     }
 

@@ -2,20 +2,50 @@
 #ifndef PING_ENTITY_H
 #define PING_ENTITY_H
 
+#include <vector>
 #include <math.h>
 #include <SDL2/SDL.h>
+
+// TODO: Maaaybe move this to its own file? Not convinced; Entity is
+// the only class that actually uses it, and it's pretty bare bones.
+class Vector2 {
+public:
+    double x, y;
+    Vector2(double x, double y);
+
+    Vector2 unit();
+    Vector2 &operator-=(const Vector2 &other);
+};
+
+Vector2 operator-(Vector2 a, const Vector2 &b);
+double operator*(const Vector2 &a, const Vector2 &b);
 
 class Entity {
 public:
     double x, y;
     int w, h;
-    double dX, dY;
-    Entity(int w, int h) : x(0), y(0), w(w), h(h), dX(0), dY(0) {}
-    Entity(double x, double y, int w, int h, double dX=0, double dY=0) : x(x), y(y), w(w), h(h), dX(dX), dY(dY) {}
-    void render(SDL_Renderer *renderer, double extrapolation=0) {
-        SDL_Rect r = { (int)round(x + extrapolation*dX), (int)round(y + extrapolation*dY), w, h };
-        SDL_RenderFillRect(renderer, &r);
-    }
+    double theta, v;
+    double orientation;
+
+    Entity();
+    Entity(int w, int h);
+    Entity(double x, double y, int w, int h, double theta=0, double v=0, double orientation=0);
+
+    double getDX() const;
+    double getDY() const;
+    double getSlope() const;
+
+    Vector2 getCenter() const;
+
+    std::vector<Vector2> getVertices() const;
+
+    void setDelta(double dX, double dY);
+    void setDX(double dX);
+    void setDY(double dY);
+
+    bool collide(const Entity &other) const;
+
+    void update();
 };
 
 #endif

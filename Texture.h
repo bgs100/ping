@@ -19,6 +19,7 @@ public:
 
     void render(SDL_Renderer *renderer, int x, int y);
     void render(SDL_Renderer *renderer, int srcX, int srcY, int w, int h, int dstX, int dstY);
+    void render(SDL_Renderer *renderer, int x, int, double angle);
 
     int w, h;
 

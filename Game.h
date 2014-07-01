@@ -6,6 +6,7 @@
 #include <SDL2/SDL_net.h>
 #include "GameState.h"
 #include "StateListener.h"
+#include "Texture.h"
 #include "SharedState.h"
 #include "PaddleInput.h"
 #include "Socket.h"
@@ -22,6 +23,8 @@ public:
     void render(double lag);
 
 private:
+    static Texture paddle, ball;
+
     SharedState state;
     PaddleInput *playerInput, *opponentInput;
     Socket *server;
@@ -29,6 +32,7 @@ private:
     int playerNum;
     bool demo;
 
+    void setupTextures();
     void errorScreen(const char *msg);
     void handleInput();
 };

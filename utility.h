@@ -4,6 +4,8 @@
 #include <SDL2/SDL_net.h>
 #include "Entity.h"
 
+const double pi = 3.14159265358979323846;
+
 bool error(const char *msg);
 bool SDLerror(const char *msg);
 
@@ -18,7 +20,5 @@ double ntohd(double input);
 double htond(double input);
 
 char *netReadLine(TCPsocket sock);
-
-bool checkCollision(Entity a, Entity b);
 
 #endif
