@@ -1,26 +1,5 @@
 #include "Entity.h"
 
-Vector2::Vector2(double x, double y) : x(x), y(y) {}
-
-Vector2 Vector2::unit() {
-    double magnitude = sqrt(x*x + y*y);
-    return Vector2(x / magnitude, y / magnitude);
-}
-
-Vector2 &Vector2::operator-=(const Vector2 &other) {
-        x -= other.x;
-        y -= other.y;
-        return *this;
-}
-
-Vector2 operator-(Vector2 a, const Vector2 &b) {
-    return a -= b;
-}
-
-double operator*(const Vector2 &a, const Vector2 &b) {
-    return a.x * b.x + a.y * b.y;
-}
-
 Entity::Entity() : x(0), y(0), w(0), h(0), theta(0), v(0), orientation(0) {}
 
 Entity::Entity(int w, int h) : x(0), y(0), w(w), h(h), theta(0), v(0), orientation(0) {}
@@ -69,15 +48,25 @@ void Entity::setDY(double dY) {
     setDelta(getDX(), dY);
 }
 
-bool Entity::collide(const Entity &other) const {
-    if (orientation == 0 && other.orientation == 0)
+void Entity::setCenter(double cX, double cY) {
+    x = cX - w/2.0;
+    y = cY - h/2.0;
+}
+
+void Entity::setCenter(const Vector2 &c) {
+    setCenter(c.x, c.y);
+}
+
+// projections is NULL by default (see Entity.h).
+bool Entity::collide(const Entity &other, std::vector<Vector2> *projections) const {
+    if (projections == NULL && orientation == 0 && other.orientation == 0)
         return (y + h >= other.y && y <= other.y + other.h && x + w >= other.x && x <= other.x + other.w);
 
     std::vector<Vector2> vertices = getVertices();
     std::vector<Vector2> otherVertices = other.getVertices();
 
-    Vector2 axis[4] = { (vertices[0] - vertices[1]).unit(), (vertices[0] - vertices[3]).unit(),
-                        (otherVertices[0] - otherVertices[1]).unit(), (otherVertices[0] - otherVertices[3]).unit() };
+    Vector2 axis[4] = { (vertices[1] - vertices[0]).unit(), (vertices[0] - vertices[3]).unit(),
+                        (otherVertices[1] - otherVertices[0]).unit(), (otherVertices[0] - otherVertices[3]).unit() };
 
     for (int a = 0; a < 4; a++) {
         double min[2] = { vertices[0] * axis[a], otherVertices[0] * axis[a] };
@@ -94,8 +83,12 @@ bool Entity::collide(const Entity &other) const {
             max[1] = std::max(otherProd, max[1]);
         }
         
-        if (min[0] > max[1] || min[1] > max[0])
+        if (min[0] > max[1] || min[1] > max[0]) {
             return false;
+        } else if (projections != NULL) {
+            double overlap = max[0] - min[0] + max[1] - min[1] - (std::max(max[0], max[1]) - std::min(min[0], min[1]));
+            projections->push_back(axis[a] * overlap);
+        }
     }
 
     return true;

@@ -11,7 +11,7 @@ Texture Game::paddle, Game::ball;
 
 // demo is false by default (see Game.h).
 Game::Game(GameManager *m, PaddleInput *p1input, PaddleInput *p2input, bool demo)
-    : GameState(m), state(this), playerInput(p1input),
+    : GameState(m), state(3, this), playerInput(p1input),
       opponentInput(p2input), networked(false), demo(demo) {
     setupTextures();
 }
@@ -60,7 +60,7 @@ Game::~Game() {
 
 void Game::setupTextures() {
     if (paddle.empty() || ball.empty()) {
-        SDL_Surface *surface = SDL_CreateRGBSurface(0, state.player.w, state.player.h, 32, 0, 0, 0, 0);
+        SDL_Surface *surface = SDL_CreateRGBSurface(0, state.players[0].w, state.players[0].h, 32, 0, 0, 0, 0);
         SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0xff, 0xff, 0xff));
         paddle = Texture::fromSurface(m->renderer, surface);
         SDL_FreeSurface(surface);
@@ -87,9 +87,20 @@ void Game::onHit() {
         Mix_PlayChannel(-1, m->hitSound, 0);
 }
 
+// TODO TODO TODO
+#include <iostream>
+#include "KeyboardInput.h"
+
 void Game::update() {
+    KeyboardInput kb1(SDL_SCANCODE_I, SDL_SCANCODE_K), kb2(SDL_SCANCODE_O, SDL_SCANCODE_L);
     if (!networked) {
-        state.update(playerInput->update(state, 0), opponentInput->update(state, 1));
+        std::vector<int> inputs(state.players.size());
+        inputs[0] = playerInput->update(state, 0);
+        inputs[1] = opponentInput->update(state, 1);
+        inputs[2] = kb1.update(state, 2);
+        for (unsigned int i = 3; i < state.players.size(); i++)
+            inputs[i] = kb2.update(state, 0);
+        state.update(inputs);
         return;
     }
 
@@ -102,50 +113,7 @@ void Game::update() {
             if (sounds & 2)
                 onHit();
 
-            state.score1 = server->getUint64();
-            state.player.x = server->getDouble();
-            state.player.y = server->getDouble();
-            state.player.theta = server->getDouble();
-            state.player.v = server->getDouble();
-            state.player.orientation = server->getDouble();
-
-            state.score2 = server->getUint64();
-            state.opponent.x = server->getDouble();
-            state.opponent.y = server->getDouble();
-            state.opponent.theta = server->getDouble();
-            state.opponent.v = server->getDouble();
-            state.opponent.orientation = server->getDouble();
-
-            state.ball.x = server->getDouble();
-            state.ball.y = server->getDouble();
-            state.ball.theta = server->getDouble();
-            state.ball.v = server->getDouble();
-            state.ball.orientation = server->getDouble();
-
-            // This allows both players to play as the paddle on the
-            // left, so that they can both comfortably use the same
-            // controls (W and S).
-            if (playerNum == 1) {
-                state.ball.x = m->WIDTH - state.ball.x - state.ball.w;
-                state.ball.setDY(state.ball.getDY() * -1);
-
-                double tmp = state.player.y;
-                state.player.y = state.opponent.y;
-                state.opponent.y = tmp;
-
-                tmp = state.player.v;
-                state.player.v = state.opponent.v;
-                state.opponent.v = tmp;
-
-                tmp = state.player.orientation;
-                state.player.orientation = -state.opponent.orientation;
-                state.opponent.orientation = -tmp;
-
-                int tmpScore = state.score1;
-                state.score1 = state.score2;
-                state.score2 = tmpScore;
-            }
-
+            // TODO: Implement new netcode.
         }
     }
 
@@ -168,13 +136,43 @@ void renderEntity(SDL_Renderer *renderer, Texture &texture, const Entity &entity
 void Game::render(double lag) {
     m->background.render(m->renderer, 0, 0);
 
-    renderEntity(m->renderer, paddle, state.player, lag);
-    renderEntity(m->renderer, paddle, state.opponent, lag);
+    char buf[21]; // Max number of characters for a 64-bit int in base 10.
+    Texture score;
+    for (unsigned int i = 0; i < state.scores.size(); i++) {
+        score = Texture::fromText(m->renderer, m->font32, itoa(state.scores[i], buf, 21), 0xaa, 0xaa, 0xaa);
+        Vector2 midpoint = (state.boundaries[(state.playerBoundaryOffset+i)%state.boundaries.size()] + state.boundaries[(state.playerBoundaryOffset+i-1)%state.boundaries.size()]) / 2;
+        double angle = pi/2 - (i + state.playerBoundaryOffset) * 2*pi / state.players.size();
+        Vector2 center(midpoint.x + 70 * cos(angle), midpoint.y - 70 * sin(angle));
+        double theta = pi/2 - angle;
+        if (fmod(theta + 90, 2*pi) > pi)
+            theta += pi;
+        score.render(m->renderer, center.x - score.w/2.0, center.y - score.h/2.0, theta * 180/pi);
+    }
+
+    for (auto p = state.players.begin(); p < state.players.end(); ++p) {
+        renderEntity(m->renderer, paddle, *p, lag);
+        SDL_SetRenderDrawColor(m->renderer, 0, 0, 0xff, 0xff);
+        SDL_RenderDrawPoint(m->renderer, p->getVertices()[0].x,  p->getVertices()[0].y);
+        SDL_SetRenderDrawColor(m->renderer, 0xff, 0, 0, 0xff);
+        SDL_RenderDrawPoint(m->renderer, p->getVertices()[1].x,  p->getVertices()[1].y);
+        SDL_SetRenderDrawColor(m->renderer, 0, 0xff, 0, 0);
+        SDL_RenderDrawPoint(m->renderer, p->getVertices()[2].x,  p->getVertices()[2].y);
+    }
     renderEntity(m->renderer, ball, state.ball, lag);
 
-    char buf[21]; // Max number of characters for a 64-bit int in base 10.
+    SDL_SetRenderDrawColor(m->renderer, 0xff, 0xff, 0xff, 0xff);
+
+    SDL_Point points[state.boundaries.size()];
+    for (unsigned int i = 0; i < state.boundaries.size(); i++) {
+        points[i].x = round(state.boundaries[i].x);
+        points[i].y = round(state.boundaries[i].y);
+    }
+    SDL_RenderDrawLines(m->renderer, points, state.boundaries.size());
+
+    /* Two-player specific code.
     Texture tScore1 = Texture::fromText(m->renderer, m->font48, itoa(state.score1, buf, 21), 0xff, 0xff, 0xff);
     Texture tScore2 = Texture::fromText(m->renderer, m->font48, itoa(state.score2, buf, 21), 0xff, 0xff, 0xff);
     tScore1.render(m->renderer, m->WIDTH/4 - tScore1.w/2, 40);
     tScore2.render(m->renderer, m->WIDTH*3/4 - tScore2.w/2, 40);
+    */
 }

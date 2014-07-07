@@ -31,6 +31,8 @@ Entity predict(Entity ball, double x) {
 }
 
 int AIInput::update(SharedState &state, int player) {
+    // TODO: Update AI code for polypong.
+    /*
     Entity *paddle, *other;
     // These compensate for which side the paddle is on.
     int paddleX, otherX;
@@ -94,4 +96,6 @@ int AIInput::update(SharedState &state, int player) {
         change = -1;
 
     return change;
+    */
+    return 0;
 }

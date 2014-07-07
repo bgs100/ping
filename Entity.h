@@ -5,25 +5,14 @@
 #include <vector>
 #include <math.h>
 #include <SDL2/SDL.h>
-
-// TODO: Maaaybe move this to its own file? Not convinced; Entity is
-// the only class that actually uses it, and it's pretty bare bones.
-class Vector2 {
-public:
-    double x, y;
-    Vector2(double x, double y);
-
-    Vector2 unit();
-    Vector2 &operator-=(const Vector2 &other);
-};
-
-Vector2 operator-(Vector2 a, const Vector2 &b);
-double operator*(const Vector2 &a, const Vector2 &b);
+#include "Vector2.h"
 
 class Entity {
 public:
     double x, y;
     int w, h;
+    // NOTE: Angles are in radians, and go clockwise from +X (due to
+    // +Y being down).
     double theta, v;
     double orientation;
 
@@ -43,7 +32,10 @@ public:
     void setDX(double dX);
     void setDY(double dY);
 
-    bool collide(const Entity &other) const;
+    void setCenter(double cX, double cY);
+    void setCenter(const Vector2 &c);
+
+    bool collide(const Entity &other, std::vector<Vector2> *projections=NULL) const;
 
     void update();
 };
