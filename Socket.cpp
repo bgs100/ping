@@ -42,5 +42,6 @@ double Socket::getDouble() {
 }
 
 void Socket::send(char *buffer, int size) {
-    SDLNet_TCP_Send(sock, buffer, size);
+    if (SDLNet_TCP_Send(sock, buffer, size) < size)
+        error = true;
 }

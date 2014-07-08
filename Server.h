@@ -2,7 +2,7 @@
 #ifndef PING_SERVER_H
 #define PING_SERVER_H
 
-#define PING_SERVER_BUILD
+#include <vector>
 #include "StateListener.h"
 #include "SharedState.h"
 
@@ -10,11 +10,20 @@ namespace Client {
     enum ClientCode { MOVE = 1 };
 }
 
+namespace EntityField {
+    enum Field { X, Y, SCORE };
+}
+
+struct EntityUpdate {
+    EntityField::Field field;
+    Uint64 val;
+};
+
 class Server: public StateListener {
 public:
-    enum ServerCode { STATE = 1, DISCONNECT, FULL };
+    enum ServerCode { INIT = 1, STATE, DISCONNECT, FULL };
 
-    Server();
+    Server(int numPlayers);
     void onBounce();
     void onHit();
     int run();
@@ -23,7 +32,7 @@ private:
     IPaddress serverIP;
     SDLNet_SocketSet socketSet;
     TCPsocket server;
-    TCPsocket clients[2];
+    std::vector<TCPsocket> clients;
     bool bounce, hit;
 
     SharedState state;

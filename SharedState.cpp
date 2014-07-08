@@ -6,13 +6,27 @@
 // TODO: Remove debug lines.
 #include <iostream>
 
-SharedState::SharedState(int numPlayers, /*bool walls,*/ StateListener *listener) : boundaries(numPlayers), players(numPlayers), scores(numPlayers), ball(20, 20), listener(listener), collided(-1) {
-    reset();
+// listener is NULL by default (see SharedState.cpp).
+SharedState::SharedState(StateListener *listener) : listener(listener) {
 }
 
-void SharedState::reset() {
-    if (players.size() == 0)
-        return;
+SharedState::SharedState(int numPlayers, StateListener *listener) : listener(listener) {
+    reset(numPlayers);
+}
+
+std::vector<Entity *> SharedState::getEntities() {
+    std::vector<Entity *> entities(players.size() + 1);
+    entities[0] = &ball;
+    for (unsigned int i = 0; i < players.size(); i++)
+        entities[i+1] = &players[i];
+
+    return entities;
+}
+
+void SharedState::reset(int numPlayers) {
+    players.resize(numPlayers);
+    scores.resize(numPlayers);
+    collided = -1;
 
     // TODO: Replace with parameter.
     bool walls = false;
@@ -20,6 +34,8 @@ void SharedState::reset() {
     int numWalls = players.size();
     if (walls)
         numWalls *= 2;
+
+    boundaries.resize(numWalls);
 
     double sideLength;
     if (numWalls % 2 == 0) {
@@ -204,8 +220,10 @@ void SharedState::update(std::vector<int> inputs) {
                 other.x += proj2.x;
                 other.y += proj2.y;
 
-                players[i].v = 0;
-                other.v = 0;
+                if ((projected.unit() * axis1) != 0)
+                    players[i].v = 0;
+                if ((projected.unit() * axis2) != 0)
+                    other.v = 0;
 
                 //assert(!players[i].collide(other));
             }

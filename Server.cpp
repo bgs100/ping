@@ -6,9 +6,7 @@
 #include "Server.h"
 #include "utility.h"
 
-Server::Server() : bounce(false), hit(false), state(this) {
-    clients[0] = NULL;
-    clients[1] = NULL;
+Server::Server(int numPlayers) : clients(numPlayers, NULL), bounce(false), hit(false), state(numPlayers, this) {
     state.ball.v = 0;
 }
 
@@ -18,7 +16,7 @@ bool Server::init() {
     if (SDLNet_Init() != 0)
         return SDLerror("SDLNet_Init()");
 
-    socketSet = SDLNet_AllocSocketSet(3);
+    socketSet = SDLNet_AllocSocketSet(clients.size()+1);
     if (socketSet == NULL)
         return SDLerror("SDLNet_AllocSocketSet");
 
@@ -44,40 +42,63 @@ void Server::onHit() {
 
 void Server::handleActivity() {
     SDLNet_CheckSockets(socketSet, 0);
-    //if (!activeSockets)
-    //    return;
 
     while (SDLNet_SocketReady(server)) {
-        if (clients[0] == NULL || clients[1] == NULL) {
-            int n = clients[0] != NULL;
+        int n = -1;
+        for (unsigned int i = 0; n == -1 && i < clients.size(); i++) {
+            if (clients[i] == NULL)
+                n = i;
+        }
+
+        if (n != -1) {
             clients[n] = SDLNet_TCP_Accept(server);
             SDLNet_TCP_AddSocket(socketSet, clients[n]);
-            char buf[1];
-            if (n == 0)
-                buf[0] = 0;
-            else
-                buf[0] = 1;
-            if (clients[0] != NULL && clients[1] != NULL)
-                state.reset();
-            SDLNet_TCP_Send(clients[n], buf, 1);
+
+            int bufSize = 3 + 16 * state.players.size();
+            char buf[bufSize];
+            int pos = 0;
+            buf[pos++] = Server::INIT;
+            buf[pos++] = (char)n;
+            buf[pos++] = (char)state.players.size();
+            for (const auto &player : state.players) {
+                *((double *)&buf[pos]) = htond(player.x);
+                pos += 8;
+                *((double *)&buf[pos]) = htond(player.y);
+                pos += 8;
+            }
+            SDLNet_TCP_Send(clients[n], buf, bufSize);
+
+            bool full = true;
+            for (auto c = clients.begin(); full && c < clients.end(); ++c) {
+                if (*c == NULL)
+                    full = false;
+            }
+
+            if (full)
+                state.ball.v = 3;
         } else {
             TCPsocket tmp = SDLNet_TCP_Accept(server);
             const char buf[] = { Server::FULL };
-            SDLNet_TCP_Send(tmp, buf, 14);
+            SDLNet_TCP_Send(tmp, buf, 1);
             SDLNet_TCP_Close(tmp);
         }
     }
 
-    int inputs[2] = { 0, 0 };
-    for (int i = 0; i < 2; i++) {
+    std::vector<int> inputs(clients.size(), 0);
+
+    for (unsigned int i = 0; i < clients.size(); i++) {
         while (clients[i] != NULL && SDLNet_SocketReady(clients[i])) {
             char buffer[2];
             int recvLen = SDLNet_TCP_Recv(clients[i], buffer, 2);
 
             if (recvLen < 2) {
-                char buf[1] = { Server::DISCONNECT };
-                if (clients[1-i] != NULL)
-                    SDLNet_TCP_Send(clients[1-i], buf, 1);
+                char buf[2] = { Server::DISCONNECT, (char)i };
+
+                for (const auto &client : clients) {
+                    if (client != NULL)
+                        SDLNet_TCP_Send(client, buf, 2);
+                }
+
                 SDLNet_TCP_DelSocket(socketSet, clients[i]);
                 SDLNet_TCP_Close(clients[i]);
                 clients[i] = NULL;
@@ -88,38 +109,55 @@ void Server::handleActivity() {
         }
     }
 
-    state.update(inputs[0], inputs[1]);
+    SharedState old(state);
+    state.update(inputs);
 
-    for (int i = 0; i < 2; i++) {
-        if (clients[i] != NULL) {
-            char buf[138];
-            int pos = 0;
-            buf[pos] = Server::STATE;
+    std::vector<Entity *> oldEntities = old.getEntities();
+    std::vector<Entity *> currentEntities = state.getEntities();
 
-            buf[pos+=1] = ((int)hit << 1) | (int)bounce;
+    std::vector<EntityUpdate> updates[oldEntities.size()];
 
-            *((Uint64 *)&buf[pos+=1]) = hton64(state.score1);
-            *((double *)&buf[pos+=8]) = htond(state.player.x);
-            *((double *)&buf[pos+=8]) = htond(state.player.y);
-            *((double *)&buf[pos+=8]) = htond(state.player.theta);
-            *((double *)&buf[pos+=8]) = htond(state.player.v);
-            *((double *)&buf[pos+=8]) = htond(state.player.orientation);
+    for (unsigned int i = 0; i < oldEntities.size(); i++) {
+        if (oldEntities[i]->x != currentEntities[i]->x)
+            updates[i].push_back({ EntityField::X, *((Uint64 *)&currentEntities[i]->x) });
+        if (oldEntities[i]->y != currentEntities[i]->y)
+            updates[i].push_back({ EntityField::Y, *((Uint64 *)&currentEntities[i]->y) });
+        // Would be nice to find a way to make this neater...
+        if (i > 0 && old.scores[i-1] != state.scores[i-1])
+            updates[i].push_back({ EntityField::SCORE, (Uint64)state.scores[i-1]});
+    }
 
-            *((Uint64 *)&buf[pos+=8]) = hton64(state.score2);
-            *((double *)&buf[pos+=8]) = htond(state.opponent.x);
-            *((double *)&buf[pos+=8]) = htond(state.opponent.y);
-            *((double *)&buf[pos+=8]) = htond(state.opponent.theta);
-            *((double *)&buf[pos+=8]) = htond(state.opponent.v);
-            *((double *)&buf[pos+=8]) = htond(state.opponent.orientation);
-            
-            *((double *)&buf[pos+=8]) = htond(state.ball.x);
-            *((double *)&buf[pos+=8]) = htond(state.ball.y);
-            *((double *)&buf[pos+=8]) = htond(state.ball.theta);
-            *((double *)&buf[pos+=8]) = htond(state.ball.v);
-            *((double *)&buf[pos+=8]) = htond(state.ball.orientation);
-        
-            SDLNet_TCP_Send(clients[i], buf, 138);
+    int bufSize = 3;
+    int changedEntities = 0;
+    for (unsigned int i = 0; i < oldEntities.size(); i++) {
+        if (!updates[i].empty()) {
+            bufSize += 2;
+            changedEntities++;
         }
+        bufSize += updates[i].size() * 9;
+    }
+
+    char buf[bufSize];
+    int pos = 0;
+    buf[pos++] = Server::STATE;
+    buf[pos++] = ((int)hit << 1) | (int)bounce; 
+    buf[pos++] = changedEntities;
+
+    for (unsigned int i = 0; i < oldEntities.size(); i++) {
+        if (updates[i].empty())
+            continue;
+        buf[pos++] = i;
+        buf[pos++] = updates[i].size();
+        for (const auto &update : updates[i]) {
+            buf[pos++] = update.field;
+            *((Uint64 *)&buf[pos]) = hton64(update.val);
+            pos += 8;
+        }
+    }
+
+    for (unsigned int i = 0; i < clients.size(); i++) {
+        if (clients[i] != NULL)
+            SDLNet_TCP_Send(clients[i], buf, bufSize);
     }
 
     if (bounce)
@@ -152,6 +190,11 @@ int Server::run() {
 }
 
 int main(int argc, char **argv) {
-    Server server;
+    if (argc < 2) {
+        std::cerr << "usage: ./server [number of players]" << std::endl;
+        return 1;
+    }
+
+    Server server(std::stoi(argv[1]));
     return server.run();
 }

@@ -45,7 +45,26 @@ Game::Game(GameManager *m, PaddleInput *p1input, const char *host)
         return;
     }
 
+    char op = server->getByte();
+    if (server->error) {
+        errorScreen("Server disconnected.");
+        return;
+    } else if (op == Server::FULL) {
+        errorScreen("Server is full.");
+        return;
+    } else if (op != Server::INIT) {
+        errorScreen("Unknown response.");
+        return;
+    }
+
     playerNum = server->getByte();
+    state.reset(server->getByte());
+
+    for (auto &player : state.players) {
+        player.x = server->getDouble();
+        player.y = server->getDouble();
+    }
+
     if (server->error)
         errorScreen("Server disconnected.");
 }
@@ -88,7 +107,6 @@ void Game::onHit() {
 }
 
 // TODO TODO TODO
-#include <iostream>
 #include "KeyboardInput.h"
 
 void Game::update() {
@@ -113,7 +131,28 @@ void Game::update() {
             if (sounds & 2)
                 onHit();
 
-            // TODO: Implement new netcode.
+            std::vector<Entity *> entities = state.getEntities();
+            int changedEntities = server->getByte();
+            for (int i = 0; i < changedEntities; i++) {
+                int entityNum = server->getByte();
+                int numUpdates = server->getByte();
+                for (int up = 0; up < numUpdates; up++) {
+                    int field = server->getByte();
+                    Uint64 val = server->getUint64();
+                    if (field == EntityField::X)
+                        entities[entityNum]->x = *((double *)&val);
+                    else if (field == EntityField::Y)
+                        entities[entityNum]->y = *((double *)&val);
+                    else if (field == EntityField::SCORE)
+                        state.scores[entityNum-1] = val;
+                }
+            }
+        } else if (op == Server::DISCONNECT) {
+            // TODO: Indicate that a player left.
+            server->getByte();
+        } else {
+            errorScreen("Unknown directive from server.");
+            return;
         }
     }
 
@@ -162,12 +201,16 @@ void Game::render(double lag) {
 
     SDL_SetRenderDrawColor(m->renderer, 0xff, 0xff, 0xff, 0xff);
 
-    SDL_Point points[state.boundaries.size()];
+    SDL_Point points[state.boundaries.size()+1];
     for (unsigned int i = 0; i < state.boundaries.size(); i++) {
         points[i].x = round(state.boundaries[i].x);
         points[i].y = round(state.boundaries[i].y);
     }
-    SDL_RenderDrawLines(m->renderer, points, state.boundaries.size());
+
+    points[state.boundaries.size()].x = round(state.boundaries[0].x);
+    points[state.boundaries.size()].y = round(state.boundaries[0].y);
+
+    SDL_RenderDrawLines(m->renderer, points, state.boundaries.size()+1);
 
     /* Two-player specific code.
     Texture tScore1 = Texture::fromText(m->renderer, m->font48, itoa(state.score1, buf, 21), 0xff, 0xff, 0xff);

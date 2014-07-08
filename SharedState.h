@@ -17,8 +17,12 @@ public:
     StateListener *listener;
     int collided;
 
-    SharedState(int numPlayers=0, StateListener *listener=NULL);
-    void reset();
+    SharedState(StateListener *listener=NULL);
+    SharedState(int numPlayers, StateListener *listener=NULL);
+
+    std::vector<Entity *> getEntities();
+
+    void reset(int numPlayers);
     void update(std::vector<int> inputs);
 
 private:
