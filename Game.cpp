@@ -7,7 +7,7 @@
 #include "Texture.h"
 #include "utility.h"
 
-Texture Game::paddle, Game::ball;
+Texture Game::whiteTexture;
 
 // demo is false by default (see Game.h).
 Game::Game(GameManager *m, PaddleInput *p1input, PaddleInput *p2input, bool demo)
@@ -78,15 +78,10 @@ Game::~Game() {
 }
 
 void Game::setupTextures() {
-    if (paddle.empty() || ball.empty()) {
-        SDL_Surface *surface = SDL_CreateRGBSurface(0, state.players[0].w, state.players[0].h, 32, 0, 0, 0, 0);
+    if (whiteTexture.empty()) {
+        SDL_Surface *surface = SDL_CreateRGBSurface(0, 1, 1, 32, 0, 0, 0, 0);
         SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0xff, 0xff, 0xff));
-        paddle = Texture::fromSurface(m->renderer, surface);
-        SDL_FreeSurface(surface);
-
-        surface = SDL_CreateRGBSurface(0, state.ball.w, state.ball.h, 32, 0, 0, 0, 0);
-        SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0xff, 0xff, 0xff));
-        ball = Texture::fromSurface(m->renderer, surface);
+        whiteTexture = Texture::fromSurface(m->renderer, surface);
         SDL_FreeSurface(surface);
     }
 }
@@ -169,7 +164,7 @@ void Game::update() {
 
 void renderEntity(SDL_Renderer *renderer, Texture &texture, const Entity &entity, double lag) {
     double dX = entity.getDX(), dY = entity.getDY();
-    texture.render(renderer, entity.x + lag * dX, entity.y + lag * dY, entity.orientation * 180/pi);
+    texture.render(renderer, entity.x + lag * dX, entity.y + lag * dY, entity.w, entity.h, entity.orientation * 180/pi);
 }
 
 void Game::render(double lag) {
@@ -189,7 +184,7 @@ void Game::render(double lag) {
     }
 
     for (auto p = state.players.begin(); p < state.players.end(); ++p) {
-        renderEntity(m->renderer, paddle, *p, lag);
+        renderEntity(m->renderer, whiteTexture, *p, lag);
         SDL_SetRenderDrawColor(m->renderer, 0, 0, 0xff, 0xff);
         SDL_RenderDrawPoint(m->renderer, p->getVertices()[0].x,  p->getVertices()[0].y);
         SDL_SetRenderDrawColor(m->renderer, 0xff, 0, 0, 0xff);
@@ -197,7 +192,7 @@ void Game::render(double lag) {
         SDL_SetRenderDrawColor(m->renderer, 0, 0xff, 0, 0);
         SDL_RenderDrawPoint(m->renderer, p->getVertices()[2].x,  p->getVertices()[2].y);
     }
-    renderEntity(m->renderer, ball, state.ball, lag);
+    renderEntity(m->renderer, whiteTexture, state.ball, lag);
 
     SDL_SetRenderDrawColor(m->renderer, 0xff, 0xff, 0xff, 0xff);
 

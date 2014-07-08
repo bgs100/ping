@@ -60,6 +60,11 @@ void Texture::render(SDL_Renderer *renderer, int x, int y, double angle) {
     SDL_RenderCopyEx(renderer, texture, NULL, &dst, angle, NULL, SDL_FLIP_NONE);
 }
 
+void Texture::render(SDL_Renderer *renderer, int x, int y, int w, int h, double angle) {
+    SDL_Rect dst = { x, y, w, h };
+    SDL_RenderCopyEx(renderer, texture, NULL, &dst, angle, NULL, SDL_FLIP_NONE);
+}
+
 Texture Texture::fromSurface(SDL_Renderer *renderer, SDL_Surface *surface) {
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (texture == NULL)

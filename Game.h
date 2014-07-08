@@ -23,7 +23,7 @@ public:
     void render(double lag);
 
 private:
-    static Texture paddle, ball;
+    static Texture whiteTexture;
 
     SharedState state;
     PaddleInput *playerInput, *opponentInput;

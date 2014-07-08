@@ -18,6 +18,10 @@ bool GameManager::init() {
     if (SDLNet_Init() != 0)
         return SDLerror("SDLNet_Init");
     
+    // Enable anti-aliasing.
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+
     window = SDL_CreateWindow("PiNG", 100, 100, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
     if (window == NULL)
 	return SDLerror("SDL_CreateWindow");
