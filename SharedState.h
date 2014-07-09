@@ -18,12 +18,16 @@ public:
     int collided;
 
     SharedState(StateListener *listener=NULL);
-    SharedState(int numPlayers, StateListener *listener=NULL);
+    SharedState(int numPlayers, int wallsPerPlayer, StateListener *listener=NULL);
 
     std::vector<Entity *> getEntities();
 
-    void reset(int numPlayers);
+    void resetBall();
+    void reset(int numPlayers, int wallMult);
     void update(std::vector<int> inputs);
+
+    int playerToBoundaryIndex(int playerIndex) const;
+    int boundaryToPlayerIndex(int boundaryIndex) const;
 
 private:
     double centerY;

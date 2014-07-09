@@ -10,8 +10,8 @@
 SharedState::SharedState(StateListener *listener) : listener(listener) {
 }
 
-SharedState::SharedState(int numPlayers, StateListener *listener) : listener(listener) {
-    reset(numPlayers);
+SharedState::SharedState(int numPlayers, int wallsPerPlayer, StateListener *listener) : listener(listener) {
+    reset(numPlayers, wallsPerPlayer);
 }
 
 std::vector<Entity *> SharedState::getEntities() {
@@ -23,17 +23,19 @@ std::vector<Entity *> SharedState::getEntities() {
     return entities;
 }
 
-void SharedState::reset(int numPlayers) {
+void SharedState::resetBall() {
+    ball.x = GameManager::WIDTH/2 - ball.w/2;
+    ball.y = centerY;
+    ball.theta = (.5 + rand() % boundaries.size()) * 2*pi / boundaries.size();
+    ball.v = 3 * scale;
+}
+
+void SharedState::reset(int numPlayers, int wallMult) {
     players.resize(numPlayers);
     scores.resize(numPlayers);
     collided = -1;
 
-    // TODO: Replace with parameter.
-    bool walls = false;
-
-    int numWalls = players.size();
-    if (walls)
-        numWalls *= 2;
+    int numWalls = players.size() * wallMult;
 
     boundaries.resize(numWalls);
 
@@ -48,9 +50,9 @@ void SharedState::reset(int numPlayers) {
 
     scale = 1.0;
     if (sideLength < GameManager::HEIGHT / 2)
-        scale = sideLength / GameManager::HEIGHT * 2;
+        scale *= sideLength / GameManager::HEIGHT * 2;
 
-    double exteriorAngle = 2*pi / players.size();
+    double exteriorAngle = 2*pi / boundaries.size();
     double interiorAngle = pi - exteriorAngle, theta = pi;
     Vector2 v((GameManager::WIDTH - sideLength) / 2.0, GameManager::HEIGHT-1);
     // Matches the first player with the straightest, left-most
@@ -58,10 +60,11 @@ void SharedState::reset(int numPlayers) {
     playerBoundaryOffset = 0;
     double straightDiff = pi / 2;
 
-    for (unsigned int i = 0; i < players.size(); i++) {
+    for (unsigned int i = 0; i < boundaries.size(); i++) {
         boundaries[i] = v;
+        std::cout << i << ": " << boundaries[i] << std::endl;
         double diff = fabs(pi/2 - fmod(theta, pi));
-        if (diff < straightDiff) {
+        if ((straightDiff - diff) > (straightDiff / 1e10)) {
             playerBoundaryOffset = i;
             straightDiff = diff;
         }
@@ -74,26 +77,24 @@ void SharedState::reset(int numPlayers) {
         players[i].w = std::max(1.0, 20 * scale);
         players[i].h = std::max(1.0, 80 * scale);
 
-        double angle = pi/2 - (i + playerBoundaryOffset) * exteriorAngle;
+        int boundaryIndex = playerToBoundaryIndex(i);
+        double angle = pi/2 - boundaryIndex * exteriorAngle;
 
-        Vector2 midpoint = (boundaries[(playerBoundaryOffset+i)%boundaries.size()] + boundaries[(playerBoundaryOffset+i-1)%boundaries.size()]) / 2;
+        Vector2 midpoint = (boundaries[boundaryIndex] + boundaries[(boundaries.size()+boundaryIndex-1) % boundaries.size()]) / 2;
         players[i].setCenter(midpoint.x + 30 * scale * cos(angle), midpoint.y - 30 * scale * sin(angle));
-        players[i].theta = fmod((playerBoundaryOffset + i) * exteriorAngle, 2*pi);
-        if (players[i].theta > pi)
+        players[i].theta = fmod(boundaryIndex * exteriorAngle, 2*pi);
+        if (players[i].theta >= pi)
             players[i].theta -= pi;
 
         players[i].v = 0;
-        players[i].orientation = fmod(3*pi/2 + ((playerBoundaryOffset + i) % boundaries.size()) * exteriorAngle, 2*pi);
+        players[i].orientation = fmod(3*pi/2 + boundaryIndex * exteriorAngle, 2*pi);
 
         scores[i] = 0;
     }
 
     ball.w = std::max(1.0, 20 * scale);
     ball.h = std::max(1.0, 20 * scale);
-    ball.x = GameManager::WIDTH/2 - ball.w/2;
-    ball.y = centerY;
-    ball.theta = rand() % boundaries.size() * 2*pi / boundaries.size() + pi/2 - pi / boundaries.size();
-    ball.v = 3 * scale;
+    resetBall();
 
     score1 = score2 = 0;
 }
@@ -115,9 +116,10 @@ void SharedState::update(std::vector<int> inputs) {
         players[i].update();
 
         // Check paddle for collisions with neighboring boundaries.
+        int wallMult = boundaries.size() / players.size();
         for (int b = -1; b < 3; b += 2) {
-            Vector2 start = boundaries[(boundaries.size()+i+b+playerBoundaryOffset-1) % boundaries.size()];
-            Vector2 end = boundaries[(i+b+playerBoundaryOffset) % boundaries.size()];
+            Vector2 start = boundaries[(boundaries.size()+i*wallMult+b+playerBoundaryOffset-1) % boundaries.size()];
+            Vector2 end = boundaries[(i*wallMult+b+playerBoundaryOffset) % boundaries.size()];
             std::vector<Vector2> vertices = players[i].getVertices();
 
             for (unsigned int v = 0; v < vertices.size(); v++) {
@@ -224,28 +226,12 @@ void SharedState::update(std::vector<int> inputs) {
                     players[i].v = 0;
                 if ((projected.unit() * axis2) != 0)
                     other.v = 0;
-
-                //assert(!players[i].collide(other));
             }
         }
     }
 
     Entity oldBall(ball);
     ball.update();
-
-    // TODO: Add new boundary wall-bounce code after adding walls parameter.
-    /*if (ball.y < 0 || ball.y + ball.h > GameManager::HEIGHT) {
-        if (listener != NULL)
-            listener->onBounce();
-        ball.theta = 2*pi - ball.theta;
-        // Like with the paddle bouncing code below, extra distance is
-        // re-applied, so the ball travels at a consistent rate
-        // despite bouncing.
-        if (ball.y < 0)
-            ball.y = ball.getDY() - oldBall.y;
-        else
-            ball.y = GameManager::HEIGHT - ball.h + ball.getDY() + (GameManager::HEIGHT - ball.h) - oldBall.y;
-    }*/
 
     // TODO: Replace with line (from paddle sides) and OBB
     // intersection check (project box and line on to perpindicular
@@ -279,42 +265,73 @@ void SharedState::update(std::vector<int> inputs) {
     }
 
     bool scored = false;
+    bool allThrough;
     bool anyThrough[scores.size()];
 
     for (unsigned int i = 0; i < boundaries.size(); i++) {
         Vector2& start = boundaries[(boundaries.size()+i-1)%boundaries.size()];
         Vector2& end = boundaries[i];
         std::vector<Vector2> vertices = ball.getVertices();
-        int scoreIndex = (scores.size() + i - playerBoundaryOffset) % scores.size();
-        anyThrough[scoreIndex] = false;
-        bool allThrough = true;
-        for (auto v = vertices.begin(); v < vertices.end(); ++v) {
-            if (((end.x-start.x)*(v->y-start.y) - (end.y-start.y)*(v->x-start.x)) > 0) {
-                allThrough = false;
-                if (anyThrough[scoreIndex])
-                    break;
+
+        int playerIndex = boundaryToPlayerIndex(i);
+        if (playerIndex != -1) {
+            allThrough = true;
+            anyThrough[i] = false;
+        }
+
+        for (const auto &v : vertices) {
+            if (((end.x-start.x)*(v.y-start.y) - (end.y-start.y)*(v.x-start.x)) > 0) {
+                if (playerIndex != -1) {
+                    allThrough = false;
+                    if (anyThrough[playerIndex])
+                        break;
+                }
             } else {
-                anyThrough[scoreIndex] = true;
-                if (!allThrough)
+                if (playerIndex != -1) {
+                    anyThrough[playerIndex] = true;
+                    if (!allThrough)
+                        break;
+                } else {
+                    listener->onBounce();
+                    Vector2 wall = (end - start).unit();
+
+                    double angle = atan2(wall.y, wall.x);
+                    ball.theta = 2*angle - ball.theta;
+
+                    Vector2 perpendicular(-wall.y, wall.x);
+                    Vector2 dir(cos(ball.theta), sin(ball.theta));
+                    dir *= ((start * perpendicular) - (v * perpendicular)) / (dir * perpendicular);
+                    ball.x += dir.x;
+                    ball.y += dir.y;
+
                     break;
+                }
             }
         }
 
-        if (allThrough)
+        if (playerIndex != -1 && allThrough)
             scored = true;
     }
 
     if (scored) {
-        // TODO: Make it go to the last player to hit it, or any
-        // direction away from those who missed.
-        ball.theta = rand() % boundaries.size() * 2*pi / boundaries.size() + pi/2 - pi / boundaries.size();
-        ball.v = 3 * scale;
-        ball.x = GameManager::WIDTH / 2 - ball.w / 2;
-        ball.y = centerY;
+        resetBall();
 
         for (unsigned int i = 0; i < scores.size(); i++) {
             if (!anyThrough[i])
                 scores[i] += 1;
         }
     }
+}
+
+int SharedState::playerToBoundaryIndex(int playerIndex) const {
+    return (playerBoundaryOffset + (boundaries.size() / players.size()) * playerIndex) % boundaries.size();
+}
+
+int SharedState::boundaryToPlayerIndex(int boundaryIndex) const {
+    int val = (boundaries.size() + boundaryIndex - playerBoundaryOffset) % boundaries.size();
+    int wallMult = boundaries.size() / players.size();
+    // Check if it actually represents a player's wall.
+    if ((val % wallMult) != 0)
+        return -1;
+    return val / wallMult;
 }

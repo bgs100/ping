@@ -6,7 +6,8 @@
 #include "Server.h"
 #include "utility.h"
 
-Server::Server(int numPlayers) : clients(numPlayers, NULL), bounce(false), hit(false), state(numPlayers, this) {
+Server::Server(int numPlayers, int wallsPerPlayer)
+    : clients(numPlayers, NULL), bounce(false), hit(false), state(numPlayers, wallsPerPlayer, this) {
     state.ball.v = 0;
 }
 
@@ -54,12 +55,13 @@ void Server::handleActivity() {
             clients[n] = SDLNet_TCP_Accept(server);
             SDLNet_TCP_AddSocket(socketSet, clients[n]);
 
-            int bufSize = 3 + 16 * state.players.size();
+            int bufSize = 4 + 16 * state.players.size();
             char buf[bufSize];
             int pos = 0;
             buf[pos++] = Server::INIT;
             buf[pos++] = (char)n;
             buf[pos++] = (char)state.players.size();
+            buf[pos++] = (char)state.boundaries.size() / state.players.size();
             for (const auto &player : state.players) {
                 *((double *)&buf[pos]) = htond(player.x);
                 pos += 8;
@@ -75,7 +77,7 @@ void Server::handleActivity() {
             }
 
             if (full)
-                state.ball.v = 3;
+                state.resetBall();
         } else {
             TCPsocket tmp = SDLNet_TCP_Accept(server);
             const char buf[] = { Server::FULL };
@@ -191,10 +193,14 @@ int Server::run() {
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        std::cerr << "usage: ./server [number of players]" << std::endl;
+        std::cerr << "usage: ./server [number of players] [walls per player (defaults to 1)]" << std::endl;
         return 1;
     }
 
-    Server server(std::stoi(argv[1]));
+    int wallsPerPlayer = 1;
+    if (argc > 2)
+        wallsPerPlayer = std::stoi(argv[2]);
+
+    Server server(std::stoi(argv[1]), wallsPerPlayer);
     return server.run();
 }

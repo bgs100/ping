@@ -23,7 +23,7 @@ class Server: public StateListener {
 public:
     enum ServerCode { INIT = 1, STATE, DISCONNECT, FULL };
 
-    Server(int numPlayers);
+    Server(int numPlayers, int wallsPerPlayer);
     void onBounce();
     void onHit();
     int run();

@@ -11,7 +11,7 @@ Texture Game::whiteTexture;
 
 // demo is false by default (see Game.h).
 Game::Game(GameManager *m, PaddleInput *p1input, PaddleInput *p2input, bool demo)
-    : GameState(m), state(3, this), playerInput(p1input),
+    : GameState(m), state(3, 2, this), playerInput(p1input),
       opponentInput(p2input), networked(false), demo(demo) {
     setupTextures();
 }
@@ -58,7 +58,9 @@ Game::Game(GameManager *m, PaddleInput *p1input, const char *host)
     }
 
     playerNum = server->getByte();
-    state.reset(server->getByte());
+    int numPlayers = server->getByte();
+    int wallsPerPlayer = server->getByte();
+    state.reset(numPlayers, wallsPerPlayer);
 
     for (auto &player : state.players) {
         player.x = server->getDouble();
@@ -172,10 +174,12 @@ void Game::render(double lag) {
 
     char buf[21]; // Max number of characters for a 64-bit int in base 10.
     Texture score;
+    int wallMult = state.boundaries.size() / state.scores.size();
     for (unsigned int i = 0; i < state.scores.size(); i++) {
         score = Texture::fromText(m->renderer, m->font32, itoa(state.scores[i], buf, 21), 0xaa, 0xaa, 0xaa);
-        Vector2 midpoint = (state.boundaries[(state.playerBoundaryOffset+i)%state.boundaries.size()] + state.boundaries[(state.playerBoundaryOffset+i-1)%state.boundaries.size()]) / 2;
-        double angle = pi/2 - (i + state.playerBoundaryOffset) * 2*pi / state.players.size();
+        Vector2 midpoint = (state.boundaries[(state.playerBoundaryOffset + i*wallMult) % state.boundaries.size()] +
+                            state.boundaries[(state.playerBoundaryOffset + i*wallMult-1) % state.boundaries.size()]) / 2;
+        double angle = pi/2 - (i*wallMult + state.playerBoundaryOffset) * 2*pi / state.boundaries.size();
         Vector2 center(midpoint.x + 70 * cos(angle), midpoint.y - 70 * sin(angle));
         double theta = pi/2 - angle;
         if (fmod(theta + 90, 2*pi) > pi)
