@@ -276,7 +276,7 @@ void SharedState::update(std::vector<int> inputs) {
         int playerIndex = boundaryToPlayerIndex(i);
         if (playerIndex != -1) {
             allThrough = true;
-            anyThrough[i] = false;
+            anyThrough[playerIndex] = false;
         }
 
         for (const auto &v : vertices) {

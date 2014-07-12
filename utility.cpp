@@ -58,19 +58,26 @@ double htond(double input) {
     return ntohd(input);
 }
 
-char *netReadLine(TCPsocket sock) {
-    char *buffer = (char *)malloc(256);
-    int i = 0;
+// maxLen and cutLen default to 0 (see utility.h).
+const char *getShortKeyName(SDL_Keycode key, int maxLen, int cutLen) {
+    static std::string name;
+    const char *longName = SDL_GetKeyName(key);
+    name = longName;
 
-    do {
-        if (SDLNet_TCP_Recv(sock, buffer+i, 1) < 1) {
-            SDLerror("SDLNet_TCP_Recv");
-            free(buffer);
-            return NULL;
-        }
-        i++;
-    } while (buffer[i-1] != '\n' && i < 256);
+    size_t pos;
+    if ((pos = name.find("Left")) != std::string::npos)
+        name.replace(pos, 4, "L");
+    else if ((pos = name.find("Right")) != std::string::npos)
+        name.replace(pos, 5, "R");
+    else if ((pos = name.find("Keypad")) != std::string::npos)
+        name.replace(pos, 6, "KP");
 
-    SDLNet_TCP_Recv(sock, buffer+i, 1);
-    return buffer;
+    if (maxLen > 0 && (int)name.size() > maxLen) {
+        if (cutLen < 1)
+            cutLen = maxLen - 3;
+        name.erase(name.size() - (name.size() - cutLen), cutLen - name.size());
+        name += "...";
+    }
+
+    return name.c_str();
 }

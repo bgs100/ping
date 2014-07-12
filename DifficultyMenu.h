@@ -13,7 +13,6 @@ public:
     void render();
 
 private:
-    enum Button { EASY, MEDIUM, HARD, NOPE, INSANITY, END_BUTTON };
     static const char *labels[];
 
     ButtonMenu buttonMenu;

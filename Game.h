@@ -2,6 +2,7 @@
 #ifndef PING_GAME_H
 #define PING_GAME_H
 
+#include <vector>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
 #include "GameState.h"
@@ -13,8 +14,8 @@
 
 class Game: public GameState, public StateListener {
 public:
-    Game(GameManager *m, PaddleInput *p1input, PaddleInput *p2input, bool demo=false);
-    Game(GameManager *m, PaddleInput *p1input, const char *host);
+    Game(GameManager *m, std::vector<PaddleInput *> inputs, int wallsPerPlayer, bool demo=false);
+    Game(GameManager *m, PaddleInput *input, const char *host);
     ~Game();
 
     void onBounce();
@@ -26,7 +27,7 @@ private:
     static Texture whiteTexture;
 
     SharedState state;
-    PaddleInput *playerInput, *opponentInput;
+    std::vector<PaddleInput *> inputs;
     Socket *server;
     bool networked;
     int playerNum;

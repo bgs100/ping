@@ -4,10 +4,10 @@
 Texture ErrorScreen::errorText, ErrorScreen::continueText;
 
 ErrorScreen::ErrorScreen(GameManager *m, const char *msg)
-    : GameState(m), text(Texture::fromText(m->renderer, m->font32, msg, 0xff, 0xff, 0xff)) {
+    : GameState(m), text(Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_32], msg, 0xff, 0xff, 0xff)) {
     if (errorText.empty()) {
-        errorText = Texture::fromText(m->renderer, m->font48, "Error", 0xff, 0xff, 0xff);
-        continueText = Texture::fromText(m->renderer, m->font24, "Press any key to continue", 0xff, 0xff, 0xff);
+        errorText = Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_48], "Error", 0xff, 0xff, 0xff);
+        continueText = Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_24], "Press any key to continue", 0xff, 0xff, 0xff);
     }
     
 }

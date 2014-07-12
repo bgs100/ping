@@ -1,18 +1,25 @@
 #include "TitleScreen.h"
 #include "GameManager.h"
-#include "KeyboardInput.h"
 #include "AIInput.h"
 #include "DifficultyMenu.h"
+#include "SetupState.h"
 #include "MultiplayerMenu.h"
 #include "DevConsole.h"
 
 const char *TitleScreen::labels[] = { "Singleplayer", "Multiplayer (Local)", "Multiplayer (Networked)", "Tutorial", "Credits", "Quit" };
 
+std::vector<PaddleInput *> TitleScreen::makeInputs(int n) {
+    std::vector<PaddleInput *> inputs(n);
+    for (int i = 0; i < n; i++)
+        inputs[i] = new AIInput((AIInput::Difficulty)(rand() % AIInput::NUM_DIFFICULTY));
+
+    return inputs;
+}
+
 TitleScreen::TitleScreen(GameManager *m)
-    : GameState(m), titleText(Texture::fromText(m->renderer, m->font64, "PiNG", 0xff, 0xff, 0xff)),
-      buttonMenu(m->renderer, m->font32, labels, END_BUTTON, 100, 250, 21),
-      backgroundGame(m, new AIInput((AIInput::Difficulty)(rand() % AIInput::NUM_DIFFICULTY)),
-                     new AIInput((AIInput::Difficulty)(rand() % AIInput::NUM_DIFFICULTY)), true) {
+    : GameState(m), titleText(Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_64], "PiNG", 0xff, 0xff, 0xff)),
+      buttonMenu(m->renderer, m->fonts[FONT_SQR][SIZE_32], labels, END_BUTTON, 100, 250, 21), numAI(rand() % 3 + 2),
+      backgroundGame(m, makeInputs(numAI), numAI > 2 ? (rand() % 3 + 1) : 2, true) {
 }
 
 void TitleScreen::handleEvent(SDL_Event &event) {
@@ -23,9 +30,12 @@ void TitleScreen::handleEvent(SDL_Event &event) {
         // TODO: Add in code for the other buttons.
         if (selected == SINGLEPLAYER)
             m->pushState(new DifficultyMenu(m));
-        else if (selected == MULTIPLAYER_LOCAL)
-            m->pushState(new Game(m, new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S), new KeyboardInput(SDL_SCANCODE_UP, SDL_SCANCODE_DOWN)));
-        else if (selected == MULTIPLAYER_NET)
+        else if (selected == MULTIPLAYER_LOCAL) {
+            //std::vector<PaddleInput *> inputs = { new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S),
+            //                                      new KeyboardInput(SDL_SCANCODE_UP, SDL_SCANCODE_DOWN) };
+            //m->pushState(new Game(m, inputs, 2));
+            m->pushState(new SetupState(m));
+        } else if (selected == MULTIPLAYER_NET)
             m->pushState(new MultiplayerMenu(m));
         else if (selected == QUIT)
             m->running = false;

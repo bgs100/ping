@@ -9,15 +9,20 @@
 #include "TitleScreen.h"
 #include "Game.h"
 
+enum Font { FONT_RND, FONT_SQR, FONT_END };
+enum FontSize { SIZE_8, SIZE_12, SIZE_16, SIZE_24, SIZE_32, SIZE_48, SIZE_64, SIZE_END };
+
 class GameManager {
 public:
     static const int WIDTH = 1024;
     static const int HEIGHT = 768;
 
+    static const int fontSizes[];
+
     SDL_Window *window;
     SDL_Renderer *renderer;
     Texture background;
-    TTF_Font *font16, *font24, *font32, *font48, *font64;
+    TTF_Font *fonts[FONT_END][SIZE_END];
     Mix_Chunk *bounceSound, *hitSound;
     bool running;
 

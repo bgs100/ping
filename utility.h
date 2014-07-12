@@ -19,6 +19,6 @@ Uint64 hton64(Uint64 input);
 double ntohd(double input);
 double htond(double input);
 
-char *netReadLine(TCPsocket sock);
+const char *getShortKeyName(SDL_Keycode key, int maxLen=0, int cutLen=0);
 
 #endif

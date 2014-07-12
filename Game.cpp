@@ -10,14 +10,13 @@
 Texture Game::whiteTexture;
 
 // demo is false by default (see Game.h).
-Game::Game(GameManager *m, PaddleInput *p1input, PaddleInput *p2input, bool demo)
-    : GameState(m), state(3, 2, this), playerInput(p1input),
-      opponentInput(p2input), networked(false), demo(demo) {
+Game::Game(GameManager *m, std::vector<PaddleInput *> inputs, int wallsPerPlayer, bool demo)
+    : GameState(m), state(inputs.size(), wallsPerPlayer, this), inputs(inputs), server(NULL), networked(false), demo(demo) {
     setupTextures();
 }
 
-Game::Game(GameManager *m, PaddleInput *p1input, const char *host)
-    : GameState(m), playerInput(p1input), server(NULL), networked(true), demo(false) {
+Game::Game(GameManager *m, PaddleInput *input, const char *host)
+    : GameState(m), inputs{input}, server(NULL), networked(true), demo(false) {
     setupTextures();
 
     IPaddress ip;
@@ -72,11 +71,10 @@ Game::Game(GameManager *m, PaddleInput *p1input, const char *host)
 }
 
 Game::~Game() {
-    delete playerInput;
-    if (networked)
-        delete server;
-    else
-        delete opponentInput;
+    for (PaddleInput *input : inputs)
+        delete input;
+
+    delete server;
 }
 
 void Game::setupTextures() {
@@ -103,19 +101,12 @@ void Game::onHit() {
         Mix_PlayChannel(-1, m->hitSound, 0);
 }
 
-// TODO TODO TODO
-#include "KeyboardInput.h"
-
 void Game::update() {
-    KeyboardInput kb1(SDL_SCANCODE_I, SDL_SCANCODE_K), kb2(SDL_SCANCODE_O, SDL_SCANCODE_L);
     if (!networked) {
-        std::vector<int> inputs(state.players.size());
-        inputs[0] = playerInput->update(state, 0);
-        inputs[1] = opponentInput->update(state, 1);
-        inputs[2] = kb1.update(state, 2);
-        for (unsigned int i = 3; i < state.players.size(); i++)
-            inputs[i] = kb2.update(state, 0);
-        state.update(inputs);
+        std::vector<int> inputValues(state.players.size());
+        for (unsigned int i = 0; i < state.players.size(); i++)
+            inputValues[i] = inputs[i]->update(state, i);
+        state.update(inputValues);
         return;
     }
 
@@ -160,7 +151,7 @@ void Game::update() {
 
     char buf[2];
     buf[0] = Client::MOVE;
-    buf[1] = playerInput->update(state, 0);
+    buf[1] = inputs[0]->update(state, 0);
     server->send(buf, 2);
 }
 
@@ -176,7 +167,7 @@ void Game::render(double lag) {
     Texture score;
     int wallMult = state.boundaries.size() / state.scores.size();
     for (unsigned int i = 0; i < state.scores.size(); i++) {
-        score = Texture::fromText(m->renderer, m->font32, itoa(state.scores[i], buf, 21), 0xaa, 0xaa, 0xaa);
+        score = Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_32], itoa(state.scores[i], buf, 21), 0xaa, 0xaa, 0xaa);
         Vector2 midpoint = (state.boundaries[(state.playerBoundaryOffset + i*wallMult) % state.boundaries.size()] +
                             state.boundaries[(state.playerBoundaryOffset + i*wallMult-1) % state.boundaries.size()]) / 2;
         double angle = pi/2 - (i*wallMult + state.playerBoundaryOffset) * 2*pi / state.boundaries.size();

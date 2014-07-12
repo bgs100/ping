@@ -3,6 +3,8 @@
 #include "GameManager.h"
 #include "utility.h"
 
+const char *AIInput::DIFFICULTY_STRS[] = { "Easy", "Medium", "Hard", "Nope", "Insanity" };
+
 AIInput::AIInput(Difficulty difficulty): difficulty(difficulty) {}
 
 bool movingToward(const Entity &ball, double x) {

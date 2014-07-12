@@ -3,6 +3,8 @@
 #include "GameManager.h"
 #include "utility.h"
 
+const int GameManager::fontSizes[] = { 8, 12, 16, 24, 32, 48, 64 };
+
 bool GameManager::init() {
     srand(time(NULL));
 
@@ -42,13 +44,17 @@ bool GameManager::init() {
     background = Texture::fromSurface(renderer, tmp);
     SDL_FreeSurface(tmp);
 
-    font16 = TTF_OpenFont("kenpixel-square-mod.ttf", 16);
-    font24 = TTF_OpenFont("kenpixel-square-mod.ttf", 24);
-    font32 = TTF_OpenFont("kenpixel-square-mod.ttf", 32);
-    font48 = TTF_OpenFont("kenpixel-square-mod.ttf", 48);
-    font64 = TTF_OpenFont("kenpixel-square-mod.ttf", 64);
-    if (font16 == NULL || font24 == NULL || font32 == NULL || font48 == NULL || font64 == NULL)
-        return SDLerror("TTF_OpenFont");
+    for (int i = 0; i < SIZE_END; i++) {
+        fonts[FONT_RND][i] = TTF_OpenFont("kenpixel.ttf", fontSizes[i]);
+        if (fonts[FONT_RND][i] == NULL)
+            return SDLerror("TTF_OpenFont");
+    }
+
+    for (int i = 0; i < SIZE_END; i++) {
+        fonts[FONT_SQR][i] = TTF_OpenFont("kenpixel-square-mod.ttf", fontSizes[i]);
+        if (fonts[FONT_SQR][i] == NULL)
+            return SDLerror("TTF_OpenFont");
+    }
 
     bounceSound = Mix_LoadWAV("boop.wav");
     hitSound = Mix_LoadWAV("hit.wav");
@@ -148,11 +154,11 @@ void GameManager::cleanup() {
     Mix_FreeChunk(hitSound);
     Mix_FreeChunk(bounceSound);
 
-    TTF_CloseFont(font64);
-    TTF_CloseFont(font48);
-    TTF_CloseFont(font32);
-    TTF_CloseFont(font24);
-    TTF_CloseFont(font16);
+    for (int i = 0; i < FONT_END; i++) {
+        for (int j = 0; j < SIZE_END; j++) {
+            TTF_CloseFont(fonts[i][j]);
+        }
+    }
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

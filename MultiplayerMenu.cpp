@@ -6,9 +6,9 @@
 
 Texture MultiplayerMenu::prompt;
 
-MultiplayerMenu::MultiplayerMenu(GameManager *m) : GameState(m), hostInput(m->font16, 190, 310, m->WIDTH-190*2) {
+MultiplayerMenu::MultiplayerMenu(GameManager *m) : GameState(m), hostInput(m->fonts[FONT_SQR][SIZE_16], 190, 310, m->WIDTH-190*2) {
     if (prompt.empty())
-        prompt = Texture::fromText(m->renderer, m->font24, "Enter server address as domain:port (default 5556)", 0xff, 0xff, 0xff);
+        prompt = Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_24], "Enter server address as domain:port (default 5556)", 0xff, 0xff, 0xff);
 }
 
 void MultiplayerMenu::handleEvent(SDL_Event &event) {

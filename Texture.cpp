@@ -40,6 +40,14 @@ bool Texture::empty() {
     return texture == NULL;
 }
 
+void Texture::setAlphaMod(Uint8 alpha) {
+    SDL_SetTextureAlphaMod(texture, alpha);
+}
+
+void Texture::setColorMod(Uint8 r, Uint8 g, Uint8 b) {
+    SDL_SetTextureColorMod(texture, r, g, b);
+}
+
 void Texture::render(SDL_Renderer *renderer, int x, int y) {
     if (texture == NULL)
         return;

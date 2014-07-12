@@ -22,7 +22,10 @@ private:
 
     Texture titleText;
     ButtonMenu buttonMenu;
+    int numAI;
     Game backgroundGame;
+
+    static std::vector<PaddleInput *> makeInputs(int n);
 };
 
 #endif
