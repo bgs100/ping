@@ -61,7 +61,7 @@ bool Textbox::handleEvent(SDL_Event &event) {
 void Textbox::render(SDL_Renderer *renderer) {
     if (renderText) {
         renderText = false;
-        texture = Texture::fromText(renderer, font, text.c_str(), 0xff, 0xff, 0xff);
+        texture = Texture::fromText(renderer, font, text.c_str());
     }
 
     SDL_SetRenderDrawColor(renderer, 0xaa, 0xaa, 0xaa, 0xff);

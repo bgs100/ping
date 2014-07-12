@@ -8,7 +8,7 @@
 
 class SetupState: public GameState {
 public:
-    enum Button { NONE, PLUS, START, TYPE, CLOSE, DIFFICULTY, UP_KEY, DOWN_KEY };
+    enum Button { NONE, WALLS_MINUS, WALLS_PLUS, ADD_PLAYER, START, TYPE, CLOSE, DIFFICULTY, UP_KEY, DOWN_KEY };
 
     struct Selection {
         SetupState::Button button;
@@ -27,15 +27,20 @@ private:
     struct Player {
         PlayerType type;
         PaddleInput *input;
+        Texture texture1, texture2;
     };
 
-    static Texture humanText, aiText, startText, keysText;
+    static Texture wppLabelText, humanText, aiText, startText, keysText;
     static const int SPACING = 20, BOX_W = 120, BOX_H = 100, START_BUTTON_Y = 550;
 
     std::vector<Player> players;
     bool waitingForKey;
     Selection selection;
+    int wallsPerPlayer;
+    Texture wppText;
 
+    void updateWPPTexture();
+    void updateTextures(Player &player);
     Selection getSelected(int x, int y);
 };
 

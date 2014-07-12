@@ -301,8 +301,8 @@ void SharedState::update(std::vector<int> inputs) {
                     Vector2 perpendicular(-wall.y, wall.x);
                     Vector2 dir(cos(ball.theta), sin(ball.theta));
                     dir *= ((start * perpendicular) - (v * perpendicular)) / (dir * perpendicular);
-                    ball.x += dir.x;
-                    ball.y += dir.y;
+                    ball.x += dir.x * 2;
+                    ball.y += dir.y * 2;
 
                     break;
                 }

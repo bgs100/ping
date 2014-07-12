@@ -17,7 +17,7 @@ std::vector<PaddleInput *> TitleScreen::makeInputs(int n) {
 }
 
 TitleScreen::TitleScreen(GameManager *m)
-    : GameState(m), titleText(Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_64], "PiNG", 0xff, 0xff, 0xff)),
+    : GameState(m), titleText(Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_64], "PiNG")),
       buttonMenu(m->renderer, m->fonts[FONT_SQR][SIZE_32], labels, END_BUTTON, 100, 250, 21), numAI(rand() % 3 + 2),
       backgroundGame(m, makeInputs(numAI), numAI > 2 ? (rand() % 3 + 1) : 2, true) {
 }

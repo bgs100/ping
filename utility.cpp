@@ -65,12 +65,12 @@ const char *getShortKeyName(SDL_Keycode key, int maxLen, int cutLen) {
     name = longName;
 
     size_t pos;
-    if ((pos = name.find("Left")) != std::string::npos)
-        name.replace(pos, 4, "L");
-    else if ((pos = name.find("Right")) != std::string::npos)
-        name.replace(pos, 5, "R");
-    else if ((pos = name.find("Keypad")) != std::string::npos)
-        name.replace(pos, 6, "KP");
+    if ((pos = name.find("Left ")) != std::string::npos)
+        name.replace(pos, 5, "L ");
+    else if ((pos = name.find("Right ")) != std::string::npos)
+        name.replace(pos, 6, "R ");
+    else if ((pos = name.find("Keypad ")) != std::string::npos)
+        name.replace(pos, 7, "KP ");
 
     if (maxLen > 0 && (int)name.size() > maxLen) {
         if (cutLen < 1)

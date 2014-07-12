@@ -80,6 +80,7 @@ Texture Texture::fromSurface(SDL_Renderer *renderer, SDL_Surface *surface) {
     return Texture(texture, surface->w, surface->h);
 }
 
+// r, g, and b default to 0xff (see Texture.h).
 Texture Texture::fromText(SDL_Renderer *renderer, TTF_Font *font, const char *text, Uint8 r, Uint8 g, Uint8 b) {
     SDL_Color color = { r, g, b, 0xff };
     SDL_Surface *surface = TTF_RenderText_Solid(font, text, color);

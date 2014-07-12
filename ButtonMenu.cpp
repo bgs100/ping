@@ -6,7 +6,7 @@ ButtonMenu::ButtonMenu(SDL_Renderer *renderer, TTF_Font *font, const char *label
     : selectedIndex(-1), fontHeight(TTF_FontHeight(font)), numButtons(numLabels), menuX(x), menuY(y), spacing(spacing), centered(horizCenter) {
     buttons = new Texture[numLabels];
     for (int i = 0; i < numButtons; i++)
-        buttons[i] = Texture::fromText(renderer, font, labels[i], 0xff, 0xff, 0xff);
+        buttons[i] = Texture::fromText(renderer, font, labels[i]);
 }
 
 ButtonMenu::~ButtonMenu() {

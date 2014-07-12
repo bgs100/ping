@@ -203,8 +203,8 @@ void Game::render(double lag) {
     SDL_RenderDrawLines(m->renderer, points, state.boundaries.size()+1);
 
     /* Two-player specific code.
-    Texture tScore1 = Texture::fromText(m->renderer, m->font48, itoa(state.score1, buf, 21), 0xff, 0xff, 0xff);
-    Texture tScore2 = Texture::fromText(m->renderer, m->font48, itoa(state.score2, buf, 21), 0xff, 0xff, 0xff);
+    Texture tScore1 = Texture::fromText(m->renderer, m->font48, itoa(state.score1, buf, 21));
+    Texture tScore2 = Texture::fromText(m->renderer, m->font48, itoa(state.score2, buf, 21));
     tScore1.render(m->renderer, m->WIDTH/4 - tScore1.w/2, 40);
     tScore2.render(m->renderer, m->WIDTH*3/4 - tScore2.w/2, 40);
     */

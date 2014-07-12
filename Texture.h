@@ -28,7 +28,7 @@ public:
     int w, h;
 
     static Texture fromSurface(SDL_Renderer *renderer, SDL_Surface *surface);
-    static Texture fromText(SDL_Renderer *renderer, TTF_Font *font, const char *text, Uint8 r, Uint8 g, Uint8 b);
+    static Texture fromText(SDL_Renderer *renderer, TTF_Font *font, const char *text, Uint8 r=0xff, Uint8 g=0xff, Uint8 b=0xff);
 
 private:
     SDL_Texture *texture;
