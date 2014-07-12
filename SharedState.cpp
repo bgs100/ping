@@ -26,7 +26,10 @@ std::vector<Entity *> SharedState::getEntities() {
 void SharedState::resetBall() {
     ball.x = GameManager::WIDTH/2 - ball.w/2;
     ball.y = centerY;
-    ball.theta = (.5 + rand() % boundaries.size()) * 2*pi / boundaries.size();
+    int boundaryIndex = playerToBoundaryIndex(rand() % players.size()) - 1;
+    Vector2 &boundary = boundaries[(boundaries.size() + boundaryIndex) % boundaries.size()];
+    double startAngle = atan2(boundary.y - ball.y, boundary.x - ball.x);
+    ball.theta = startAngle + rand() / (double)RAND_MAX * 2*pi / boundaries.size();
     ball.v = 3 * scale;
 }
 
