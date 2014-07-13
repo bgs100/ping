@@ -3,7 +3,7 @@
 #include "GameManager.h"
 #include "utility.h"
 
-const char *AIInput::DIFFICULTY_STRS[] = { "Easy", "Medium", "Hard", "Nope", "Insanity" };
+const char *AIInput::DIFFICULTY_STRS[] = { "Easy", "Medium", "Hard" };
 
 AIInput::AIInput(Difficulty difficulty): difficulty(difficulty) {}
 
@@ -32,8 +32,33 @@ Entity predict(Entity ball, double x) {
     return ball;
 }
 
-int AIInput::update(SharedState &state, int player) {
+int AIInput::update(SharedState &state, int playerNum) {
     // TODO: Update AI code for polypong.
+
+    if (difficulty != EASY)
+        return 0;
+
+    Entity &player = state.players[playerNum];
+    Vector2 dir(cos(player.theta), sin(player.theta));
+    double playerPos = ((player.getVertices()[0] + player.getVertices()[3]) / 2) * dir;
+    double predictedPos, time;
+
+    if (difficulty == EASY) {
+         predictedPos = ((state.ball.getVertices()[0] + state.ball.getVertices()[2]) / 2) * dir;
+         time = 6;
+    }
+
+    double requiredV = (predictedPos - playerPos) / time;
+    double diff = requiredV - player.v;
+
+    int change = 0;
+    if (diff < -1)
+        change = -1;
+    else if (diff > 1)
+        change = 1;
+
+    return change;
+
     /*
     Entity *paddle, *other;
     // These compensate for which side the paddle is on.
@@ -99,5 +124,4 @@ int AIInput::update(SharedState &state, int player) {
 
     return change;
     */
-    return 0;
 }

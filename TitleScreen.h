@@ -17,7 +17,7 @@ public:
     void render(double lag);
 
 private:
-    enum Button { SINGLEPLAYER, MULTIPLAYER_LOCAL, MULTIPLAYER_NET, TUTORIAL, CREDITS, QUIT, END_BUTTON };
+    enum Button { LOCAL_GAME, CLASSIC_GAME, NETWORK_GAME, TUTORIAL, CREDITS, QUIT, END_BUTTON };
     static const char *labels[];
 
     Texture titleText;

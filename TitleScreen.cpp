@@ -6,7 +6,7 @@
 #include "MultiplayerMenu.h"
 #include "DevConsole.h"
 
-const char *TitleScreen::labels[] = { "Singleplayer", "Multiplayer (Local)", "Multiplayer (Networked)", "Tutorial", "Credits", "Quit" };
+const char *TitleScreen::labels[] = { "Local Game", "Classic Mode", "Network Game", "Tutorial", "Credits", "Quit" };
 
 std::vector<PaddleInput *> TitleScreen::makeInputs(int n) {
     std::vector<PaddleInput *> inputs(n);
@@ -28,14 +28,9 @@ void TitleScreen::handleEvent(SDL_Event &event) {
     } else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
         int selected = buttonMenu.getSelected();
         // TODO: Add in code for the other buttons.
-        if (selected == SINGLEPLAYER)
-            m->pushState(new DifficultyMenu(m));
-        else if (selected == MULTIPLAYER_LOCAL) {
-            //std::vector<PaddleInput *> inputs = { new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S),
-            //                                      new KeyboardInput(SDL_SCANCODE_UP, SDL_SCANCODE_DOWN) };
-            //m->pushState(new Game(m, inputs, 2));
+        if (selected == LOCAL_GAME)
             m->pushState(new SetupState(m));
-        } else if (selected == MULTIPLAYER_NET)
+        else if (selected == NETWORK_GAME)
             m->pushState(new MultiplayerMenu(m));
         else if (selected == QUIT)
             m->running = false;

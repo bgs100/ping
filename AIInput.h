@@ -6,13 +6,13 @@
 
 class AIInput: public PaddleInput {
 public:
-    enum Difficulty { EASY, MEDIUM, HARD, NOPE, INSANITY, NUM_DIFFICULTY };
+    enum Difficulty { EASY, MEDIUM, HARD, NUM_DIFFICULTY };
     static const char *DIFFICULTY_STRS[];
 
     Difficulty difficulty;
 
     AIInput(Difficulty difficulty);
-    int update(SharedState &state, int player);
+    int update(SharedState &state, int playerNum);
 };
 
 #endif
