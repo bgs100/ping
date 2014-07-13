@@ -33,19 +33,31 @@ Entity predict(Entity ball, double x) {
 }
 
 int AIInput::update(SharedState &state, int playerNum) {
-    // TODO: Update AI code for polypong.
+    // TODO: Finish updating AI code for polypong.
 
-    if (difficulty != EASY)
+    if (difficulty > MEDIUM)
         return 0;
 
     Entity &player = state.players[playerNum];
     Vector2 dir(cos(player.theta), sin(player.theta));
-    double playerPos = ((player.getVertices()[0] + player.getVertices()[3]) / 2) * dir;
+    Vector2 playerMid((player.getVertices()[1] + player.getVertices()[2]) / 2);
+    Vector2 ballMid((state.ball.getVertices()[0] + state.ball.getVertices()[2]) / 2);
+    double playerPos = playerMid * dir;
     double predictedPos, time;
 
     if (difficulty == EASY) {
-         predictedPos = ((state.ball.getVertices()[0] + state.ball.getVertices()[2]) / 2) * dir;
-         time = 6;
+        predictedPos = ((state.ball.getVertices()[0] + state.ball.getVertices()[2]) / 2) * dir;
+        time = 6;
+    } else if (difficulty == MEDIUM) {
+        Vector2 ballDir(cos(state.ball.theta), sin(state.ball.theta));
+        if (dir.cross(ballDir) != 0) {
+            Vector2 ballPos = playerMid + dir * ((ballMid - playerMid).cross(ballDir) / dir.cross(ballDir));
+            predictedPos = ballPos * dir;
+            time = (ballPos - Vector2(state.ball.x, state.ball.y)).length() / state.ball.v;
+        } else {
+            predictedPos = playerPos;
+            time = 1;
+        }
     }
 
     double requiredV = (predictedPos - playerPos) / time;
