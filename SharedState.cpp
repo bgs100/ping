@@ -6,7 +6,7 @@
 // TODO: Remove debug lines.
 #include <iostream>
 
-// listener is NULL by default (see SharedState.cpp).
+// listener is NULL by default (see SharedState.h).
 SharedState::SharedState(StateListener *listener) : listener(listener) {
 }
 
@@ -24,6 +24,7 @@ std::vector<Entity *> SharedState::getEntities() {
 }
 
 void SharedState::resetBall() {
+    ball.w = ball.h = 20 * scale;
     ball.x = GameManager::WIDTH/2 - ball.w/2;
     ball.y = centerY;
     int boundaryIndex = playerToBoundaryIndex(rand() % players.size()) - 1;
@@ -31,6 +32,35 @@ void SharedState::resetBall() {
     double startAngle = atan2(boundary.y - ball.y, boundary.x - ball.x);
     ball.theta = startAngle + rand() / (double)RAND_MAX * 2*pi / boundaries.size();
     ball.v = 3 * scale;
+}
+
+void SharedState::resetClassic() {
+    players.resize(2);
+    scores.resize(2);
+    boundaries.resize(4);
+
+    collided = -1;
+    centerY = GameManager::HEIGHT / 2;
+    scale = 1.0;
+    playerBoundaryOffset = 1;
+
+    boundaries[0] = Vector2(-1, GameManager::HEIGHT);
+    boundaries[1] = Vector2(-1, -1);
+    boundaries[2] = Vector2(GameManager::WIDTH, -1);
+    boundaries[3] = Vector2(GameManager::WIDTH, GameManager::HEIGHT);
+
+    for (int i = 0; i < 2; i++) {
+        players[i].w = 20;
+        players[i].h = 80;
+        players[i].setCenter(30 + i * (GameManager::WIDTH - 60), GameManager::HEIGHT / 2);
+        players[i].theta = pi/2;
+        players[i].orientation = i * pi;
+    }
+
+    for (int &score : scores)
+        score = 0;
+
+    resetBall();
 }
 
 void SharedState::reset(int numPlayers, int wallMult) {
@@ -95,11 +125,10 @@ void SharedState::reset(int numPlayers, int wallMult) {
         scores[i] = 0;
     }
 
-    ball.w = std::max(1.0, 20 * scale);
-    ball.h = std::max(1.0, 20 * scale);
-    resetBall();
+    for (int &score : scores)
+        score = 0;
 
-    score1 = score2 = 0;
+    resetBall();
 }
 
 void SharedState::update(std::vector<int> inputs) {
@@ -236,16 +265,15 @@ void SharedState::update(std::vector<int> inputs) {
     Entity oldBall(ball);
     ball.update();
 
-    // TODO: Replace with line (from paddle sides) and OBB
-    // intersection check (project box and line on to perpindicular
-    // line).
+    // TODO: Re-add phasing fix, possibly with line (from paddle
+    // sides) and OBB intersection check (project ball and line on to
+    // perpindicular line).
 
     bool anyCollision = false;
 
     for (unsigned int i = 0; i < players.size(); i++) {
         bool collision = ball.collide(players[i]);
         anyCollision |= collision;
-        // TODO: Re-add phasing fix.
 
         if ((collided == -1 || collided != (int)i) && collision) {
             if (listener != NULL)
@@ -271,6 +299,7 @@ void SharedState::update(std::vector<int> inputs) {
     bool allThrough;
     bool anyThrough[scores.size()];
 
+    // Check for 1) scoring and 2) wall bouncing.
     for (unsigned int i = 0; i < boundaries.size(); i++) {
         Vector2& start = boundaries[(boundaries.size()+i-1)%boundaries.size()];
         Vector2& end = boundaries[i];
@@ -297,15 +326,21 @@ void SharedState::update(std::vector<int> inputs) {
                 } else {
                     listener->onBounce();
                     Vector2 wall = (end - start).unit();
+                    Vector2 perpendicular(-wall.y, wall.x);
+                    double diff = (start * perpendicular) - (v * perpendicular);
+
+                    Vector2 oldDir(cos(ball.theta), sin(ball.theta));
+                    oldDir *= diff / (oldDir * perpendicular);
+                    ball.x += oldDir.x;
+                    ball.y += oldDir.y;
 
                     double angle = atan2(wall.y, wall.x);
                     ball.theta = 2*angle - ball.theta;
 
-                    Vector2 perpendicular(-wall.y, wall.x);
                     Vector2 dir(cos(ball.theta), sin(ball.theta));
-                    dir *= ((start * perpendicular) - (v * perpendicular)) / (dir * perpendicular);
-                    ball.x += dir.x * 2;
-                    ball.y += dir.y * 2;
+                    dir *= diff / (dir * perpendicular);
+                    ball.x += dir.x;
+                    ball.y += dir.y;
 
                     break;
                 }

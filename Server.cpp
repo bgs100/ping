@@ -6,8 +6,14 @@
 #include "Server.h"
 #include "utility.h"
 
-Server::Server(int numPlayers, int wallsPerPlayer)
-    : clients(numPlayers, NULL), bounce(false), hit(false), state(numPlayers, wallsPerPlayer, this) {
+// classic is false by default (see Server.h).
+Server::Server(int numPlayers, int wallsPerPlayer, bool classic)
+    : clients(numPlayers, NULL), classic(classic), bounce(false), hit(false), state(this) {
+    if (classic)
+        state.resetClassic();
+    else
+        state.reset(numPlayers, wallsPerPlayer);
+
     state.ball.v = 0;
 }
 
@@ -56,12 +62,18 @@ void Server::handleActivity() {
             SDLNet_TCP_AddSocket(socketSet, clients[n]);
 
             int bufSize = 4 + 16 * state.players.size();
+            if (state.players.size() == 2 && state.boundaries.size() == 4)
+                bufSize++;
+
             char buf[bufSize];
             int pos = 0;
             buf[pos++] = Server::INIT;
             buf[pos++] = (char)n;
             buf[pos++] = (char)state.players.size();
             buf[pos++] = (char)state.boundaries.size() / state.players.size();
+            if (state.players.size() == 2 && state.boundaries.size() == 4)
+                buf[pos++] = classic;
+
             for (const auto &player : state.players) {
                 *((double *)&buf[pos]) = htond(player.x);
                 pos += 8;
@@ -193,14 +205,27 @@ int Server::run() {
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        std::cerr << "usage: ./server [number of players] [walls per player (defaults to 1)]" << std::endl;
+        std::cerr << "usage: ./server [number of players] [walls per player (defaults to 1)] [--classic (-c)]" << std::endl;
         return 1;
     }
 
-    int wallsPerPlayer = 1;
-    if (argc > 2)
-        wallsPerPlayer = std::stoi(argv[2]);
+    bool classic = false;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--classic") == 0) {
+            classic = true;
+            break;
+        }
+    }
 
-    Server server(std::stoi(argv[1]), wallsPerPlayer);
+    int numPlayers, wallsPerPlayer = 1;
+    if (classic)
+        numPlayers = wallsPerPlayer = 2;
+    else {
+        numPlayers = std::stoi(argv[1]);
+        if (argc > 2)
+            wallsPerPlayer = std::stoi(argv[2]);
+    }
+
+    Server server(numPlayers, wallsPerPlayer, classic);
     return server.run();
 }

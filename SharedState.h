@@ -13,7 +13,6 @@ public:
     std::vector<int> scores;
     int playerBoundaryOffset;
     Entity ball;
-    int score1, score2;
     StateListener *listener;
     int collided;
 
@@ -23,6 +22,7 @@ public:
     std::vector<Entity *> getEntities();
 
     void resetBall();
+    void resetClassic();
     void reset(int numPlayers, int wallMult);
     void update(std::vector<int> inputs);
 

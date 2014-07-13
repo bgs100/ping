@@ -7,8 +7,9 @@
 
 Texture SetupState::wppLabelText, SetupState::humanText, SetupState::aiText, SetupState::startText, SetupState::keysText;
 
-SetupState::SetupState(GameManager *m)
-    : GameState(m), waitingForKey(false), selection({ NONE, 0 }), wallsPerPlayer(2) {
+// classic is false by default (see SetupState.h).
+SetupState::SetupState(GameManager *m, bool classic)
+    : GameState(m), waitingForKey(false), classic(classic), selection({ NONE, 0 }), wallsPerPlayer(2) {
     players.push_back({ HUMAN, new KeyboardInput(SDL_SCANCODE_W, SDL_SCANCODE_S) });
     players.push_back({ AI, new AIInput(AIInput::MEDIUM) });
 
@@ -73,8 +74,8 @@ SetupState::Selection SetupState::getSelected(int x, int y) {
 
     // Check for add player (plus) button selection.
     plusX = start + len + (len > 0 ? 20 : 0);
-    if (pointInRect(x, y, { plusX, (m->HEIGHT - 10) / 2, 40, 10 }) ||
-        pointInRect(x, y, { plusX + 15, (m->HEIGHT - 40) / 2, 10, 40 }))
+    if (!classic && (pointInRect(x, y, { plusX, (m->HEIGHT - 10) / 2, 40, 10 }) ||
+                     pointInRect(x, y, { plusX + 15, (m->HEIGHT - 40) / 2, 10, 40 })))
         return { ADD_PLAYER, 0 };
 
     // And for start button selection.
@@ -97,7 +98,7 @@ SetupState::Selection SetupState::getSelected(int x, int y) {
         return { TYPE, selectedBox };
 
     // Check for selection of the close button.
-    if (pointInRect(interiorX, interiorY, { BOX_W - 15, 5, 10, 10 }))
+    if (!classic && pointInRect(interiorX, interiorY, { BOX_W - 15, 5, 10, 10 }))
         return { CLOSE, selectedBox };
 
     // Check for difficulty selection.
@@ -149,7 +150,7 @@ void SetupState::handleEvent(SDL_Event &event) {
                 else
                     players[i].input = new AIInput(*((AIInput *)inputs[i]));
             }
-            m->pushState(new Game(m, inputs, wallsPerPlayer));
+            m->pushState(new Game(m, inputs, wallsPerPlayer, classic));
             reselect = false;
         } else if (selection.button == TYPE) {
             delete players[selection.index].input;
@@ -215,15 +216,17 @@ void SetupState::render() {
         SDL_RenderDrawRect(m->renderer, &rect);
 
         // Draw a close button (which removes the player).
-        rect = { x + BOX_W - 15, y + 5, 10, 10 };
-        if (selection.button != CLOSE || (int)i != selection.index)
-            SDL_SetRenderDrawColor(m->renderer, 0xaa, 0xaa, 0xaa, 0xff);
-
-        SDL_RenderDrawRect(m->renderer, &rect);
-        SDL_RenderDrawLine(m->renderer, x + BOX_W - 15, y + 5, x + BOX_W - 7, y + 13);
-        SDL_RenderDrawLine(m->renderer, x + BOX_W - 14, y + 13, x + BOX_W - 7, y + 6);
-
-        SDL_SetRenderDrawColor(m->renderer, 0xff, 0xff, 0xff, 0xff);
+        if (!classic) {
+            rect = { x + BOX_W - 15, y + 5, 10, 10 };
+            if (selection.button != CLOSE || (int)i != selection.index)
+                SDL_SetRenderDrawColor(m->renderer, 0xaa, 0xaa, 0xaa, 0xff);
+            
+            SDL_RenderDrawRect(m->renderer, &rect);
+            SDL_RenderDrawLine(m->renderer, x + BOX_W - 15, y + 5, x + BOX_W - 7, y + 13);
+            SDL_RenderDrawLine(m->renderer, x + BOX_W - 14, y + 13, x + BOX_W - 7, y + 6);
+   
+            SDL_SetRenderDrawColor(m->renderer, 0xff, 0xff, 0xff, 0xff);
+        }
 
         // Draw "Player X" at the top of the box.
         std::stringstream ss;
@@ -285,6 +288,19 @@ void SetupState::render() {
         }
     }
 
+    // Draw the start button.
+    if (players.size() < 2)
+        startText.setAlphaMod(0x55);
+    else if (selection.button == START)
+        startText.setAlphaMod(0xff);
+    else
+        startText.setAlphaMod(0xbb);
+
+    startText.render(m->renderer, (m->WIDTH - startText.w) / 2, START_BUTTON_Y);
+
+    if (classic)
+        return;
+
     SDL_SetRenderDrawColor(m->renderer, 0xff, 0xff, 0xff, 0xff);
 
     // Draw walls per player stuff.
@@ -326,14 +342,4 @@ void SetupState::render() {
     SDL_RenderFillRect(m->renderer, &rect);
     rect = { plusX + 15, (m->HEIGHT - 40) / 2, 10, 40 };
     SDL_RenderFillRect(m->renderer, &rect);
-
-    // Draw the start button.
-    if (players.size() < 2)
-        startText.setAlphaMod(0x55);
-    else if (selection.button == START)
-        startText.setAlphaMod(0xff);
-    else
-        startText.setAlphaMod(0xbb);
-
-    startText.render(m->renderer, (m->WIDTH - startText.w) / 2, START_BUTTON_Y);
 }

@@ -23,7 +23,7 @@ class Server: public StateListener {
 public:
     enum ServerCode { INIT = 1, STATE, DISCONNECT, FULL };
 
-    Server(int numPlayers, int wallsPerPlayer);
+    Server(int numPlayers, int wallsPerPlayer, bool classic=false);
     void onBounce();
     void onHit();
     int run();
@@ -33,7 +33,7 @@ private:
     SDLNet_SocketSet socketSet;
     TCPsocket server;
     std::vector<TCPsocket> clients;
-    bool bounce, hit;
+    bool classic, bounce, hit;
 
     SharedState state;
 

@@ -15,7 +15,7 @@ public:
         int index;
     };
 
-    SetupState(GameManager *m);
+    SetupState(GameManager *m, bool classic=false);
     ~SetupState();
 
     void handleEvent(SDL_Event &event);
@@ -34,7 +34,7 @@ private:
     static const int SPACING = 20, BOX_W = 120, BOX_H = 100, START_BUTTON_Y = 550;
 
     std::vector<Player> players;
-    bool waitingForKey;
+    bool waitingForKey, classic;
     Selection selection;
     int wallsPerPlayer;
     Texture wppText;

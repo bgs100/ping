@@ -1,7 +1,6 @@
 #include "TitleScreen.h"
 #include "GameManager.h"
 #include "AIInput.h"
-#include "DifficultyMenu.h"
 #include "SetupState.h"
 #include "MultiplayerMenu.h"
 #include "DevConsole.h"
@@ -19,7 +18,7 @@ std::vector<PaddleInput *> TitleScreen::makeInputs(int n) {
 TitleScreen::TitleScreen(GameManager *m)
     : GameState(m), titleText(Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_64], "PiNG")),
       buttonMenu(m->renderer, m->fonts[FONT_SQR][SIZE_32], labels, END_BUTTON, 100, 250, 21), numAI(rand() % 3 + 2),
-      backgroundGame(m, makeInputs(numAI), numAI > 2 ? (rand() % 3 + 1) : 2, true) {
+      backgroundGame(m, makeInputs(numAI), numAI > 2 ? (rand() % 3 + 1) : 2, numAI > 2 ? false : (rand() % 2), true) {
 }
 
 void TitleScreen::handleEvent(SDL_Event &event) {
@@ -30,6 +29,8 @@ void TitleScreen::handleEvent(SDL_Event &event) {
         // TODO: Add in code for the other buttons.
         if (selected == LOCAL_GAME)
             m->pushState(new SetupState(m));
+        else if (selected == CLASSIC_GAME)
+            m->pushState(new SetupState(m, true));
         else if (selected == NETWORK_GAME)
             m->pushState(new MultiplayerMenu(m));
         else if (selected == QUIT)

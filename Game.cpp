@@ -9,10 +9,15 @@
 
 Texture Game::whiteTexture;
 
-// demo is false by default (see Game.h).
-Game::Game(GameManager *m, std::vector<PaddleInput *> inputs, int wallsPerPlayer, bool demo)
-    : GameState(m), state(inputs.size(), wallsPerPlayer, this), inputs(inputs), server(NULL), networked(false), demo(demo) {
+// classic and demo are false by default (see Game.h).
+Game::Game(GameManager *m, std::vector<PaddleInput *> inputs, int wallsPerPlayer, bool classic, bool demo)
+    : GameState(m), state(this), inputs(inputs), server(NULL), networked(false), classic(classic), demo(demo) {
     setupTextures();
+
+    if (classic)
+        state.resetClassic();
+    else
+        state.reset(inputs.size(), wallsPerPlayer);
 }
 
 Game::Game(GameManager *m, PaddleInput *input, const char *host)
@@ -59,7 +64,14 @@ Game::Game(GameManager *m, PaddleInput *input, const char *host)
     playerNum = server->getByte();
     int numPlayers = server->getByte();
     int wallsPerPlayer = server->getByte();
-    state.reset(numPlayers, wallsPerPlayer);
+
+    if (numPlayers == 2 && wallsPerPlayer == 2)
+        classic = server->getByte();
+
+    if (classic)
+        state.resetClassic();
+    else
+        state.reset(numPlayers, wallsPerPlayer);
 
     for (auto &player : state.players) {
         player.x = server->getDouble();
@@ -165,21 +177,30 @@ void Game::render(double lag) {
 
     char buf[21]; // Max number of characters for a 64-bit int in base 10.
     Texture score;
-    int wallMult = state.boundaries.size() / state.scores.size();
-    for (unsigned int i = 0; i < state.scores.size(); i++) {
-        score = Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_32], itoa(state.scores[i], buf, 21), 0xaa, 0xaa, 0xaa);
-        Vector2 midpoint = (state.boundaries[(state.playerBoundaryOffset + i*wallMult) % state.boundaries.size()] +
-                            state.boundaries[(state.playerBoundaryOffset + i*wallMult-1) % state.boundaries.size()]) / 2;
-        double angle = pi/2 - (i*wallMult + state.playerBoundaryOffset) * 2*pi / state.boundaries.size();
-        Vector2 center(midpoint.x + 70 * cos(angle), midpoint.y - 70 * sin(angle));
-        double theta = pi/2 - angle;
-        if (fmod(theta + 90, 2*pi) > pi)
-            theta += pi;
-        score.render(m->renderer, center.x - score.w/2.0, center.y - score.h/2.0, theta * 180/pi);
+
+    if (classic) {
+        score = Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_48], itoa(state.scores[0], buf, 21));
+        score.render(m->renderer, m->WIDTH/4 - score.w/2, 40);
+        score = Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_48], itoa(state.scores[1], buf, 21));
+        score.render(m->renderer, m->WIDTH*3/4 - score.w/2, 40);
+    } else {
+        int wallMult = state.boundaries.size() / state.scores.size();
+        for (unsigned int i = 0; i < state.scores.size(); i++) {
+            score = Texture::fromText(m->renderer, m->fonts[FONT_SQR][SIZE_32], itoa(state.scores[i], buf, 21), 0xaa, 0xaa, 0xaa);
+            Vector2 midpoint = (state.boundaries[(state.playerBoundaryOffset + i*wallMult) % state.boundaries.size()] +
+                                state.boundaries[(state.playerBoundaryOffset + i*wallMult-1) % state.boundaries.size()]) / 2;
+            double angle = pi/2 - (i*wallMult + state.playerBoundaryOffset) * 2*pi / state.boundaries.size();
+            Vector2 center(midpoint.x + 70 * cos(angle), midpoint.y - 70 * sin(angle));
+            double theta = pi/2 - angle;
+            if (fmod(theta + 90, 2*pi) > pi)
+                theta += pi;
+            score.render(m->renderer, center.x - score.w/2.0, center.y - score.h/2.0, theta * 180/pi);
+        }
     }
 
     for (auto p = state.players.begin(); p < state.players.end(); ++p) {
         renderEntity(m->renderer, whiteTexture, *p, lag);
+        // Debugging points.
         SDL_SetRenderDrawColor(m->renderer, 0, 0, 0xff, 0xff);
         SDL_RenderDrawPoint(m->renderer, p->getVertices()[0].x,  p->getVertices()[0].y);
         SDL_SetRenderDrawColor(m->renderer, 0xff, 0, 0, 0xff);
@@ -201,11 +222,4 @@ void Game::render(double lag) {
     points[state.boundaries.size()].y = round(state.boundaries[0].y);
 
     SDL_RenderDrawLines(m->renderer, points, state.boundaries.size()+1);
-
-    /* Two-player specific code.
-    Texture tScore1 = Texture::fromText(m->renderer, m->font48, itoa(state.score1, buf, 21));
-    Texture tScore2 = Texture::fromText(m->renderer, m->font48, itoa(state.score2, buf, 21));
-    tScore1.render(m->renderer, m->WIDTH/4 - tScore1.w/2, 40);
-    tScore2.render(m->renderer, m->WIDTH*3/4 - tScore2.w/2, 40);
-    */
 }

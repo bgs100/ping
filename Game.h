@@ -14,7 +14,7 @@
 
 class Game: public GameState, public StateListener {
 public:
-    Game(GameManager *m, std::vector<PaddleInput *> inputs, int wallsPerPlayer, bool demo=false);
+    Game(GameManager *m, std::vector<PaddleInput *> inputs, int wallsPerPlayer, bool classic=false, bool demo=false);
     Game(GameManager *m, PaddleInput *input, const char *host);
     ~Game();
 
@@ -31,7 +31,7 @@ private:
     Socket *server;
     bool networked;
     int playerNum;
-    bool demo;
+    bool classic, demo;
 
     void setupTextures();
     void errorScreen(const char *msg);
