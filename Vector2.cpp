@@ -61,6 +61,10 @@ Vector2 operator-(Vector2 a, const Vector2 &b) {
     return a -= b;
 }
 
+Vector2 operator-(const Vector2 &a) {
+    return a * -1;
+}
+
 Vector2 operator*(Vector2 a, double b) {
     return a *= b;
 }

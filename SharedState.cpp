@@ -1,10 +1,8 @@
 #include <algorithm>
+#include <assert.h>
 #include "SharedState.h"
 #include "GameManager.h"
 #include "utility.h"
-
-// TODO: Remove debug lines.
-#include <iostream>
 
 // listener is NULL by default (see SharedState.h).
 SharedState::SharedState(StateListener *listener) : listener(listener) {
@@ -95,7 +93,6 @@ void SharedState::reset(int numPlayers, int wallMult) {
 
     for (unsigned int i = 0; i < boundaries.size(); i++) {
         boundaries[i] = v;
-        std::cout << i << ": " << boundaries[i] << std::endl;
         double diff = fabs(pi/2 - fmod(theta, pi));
         if ((straightDiff - diff) > (straightDiff / 1e10)) {
             playerBoundaryOffset = i;
@@ -147,11 +144,14 @@ void SharedState::update(std::vector<int> inputs) {
         players[i].v = clamp(players[i].v + change * scale, min, max);
         players[i].update();
 
+        // This is necessary to prevent the boundary check's halting
+        // from interfering with paddle/paddle collision resolution.
+        bool haltPlayer = false;
+
         // Check paddle for collisions with neighboring boundaries.
-        int wallMult = boundaries.size() / players.size();
         for (int b = -1; b < 3; b += 2) {
-            Vector2 start = boundaries[(boundaries.size()+i*wallMult+b+playerBoundaryOffset-1) % boundaries.size()];
-            Vector2 end = boundaries[(i*wallMult+b+playerBoundaryOffset) % boundaries.size()];
+            Vector2 start = boundaries[(boundaries.size()+playerToBoundaryIndex(i)+b-1) % boundaries.size()];
+            Vector2 end = boundaries[(boundaries.size()+playerToBoundaryIndex(i)+b) % boundaries.size()];
             std::vector<Vector2> vertices = players[i].getVertices();
 
             for (unsigned int v = 0; v < vertices.size(); v++) {
@@ -159,7 +159,7 @@ void SharedState::update(std::vector<int> inputs) {
                 // boundary the vertex is on.
                 // (https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line)
                 if (((end.x-start.x)*(vertices[v].y-start.y) - (end.y-start.y)*(vertices[v].x-start.x)) < 0) {
-                    players[i].v = 0;
+                    haltPlayer = true;
                     int other;
                     if (v == 0 || v == 3)
                         other = 3 - v;
@@ -172,72 +172,68 @@ void SharedState::update(std::vector<int> inputs) {
                     Vector2 q = vertices[other];
                     Vector2 s = vertices[v] - q;
                     
-                    // The -.01 pulls the intersection back very
-                    // slightly, so that it isn't still past the
-                    // border.
-                    double u = (q - p).cross(r) / (r.cross(s)) - .01;
+                    double u = (q - p).cross(r) / (r.cross(s));
                     Vector2 intersection = q + u * s;
-                    players[i].setCenter(players[i].getCenter() - vertices[v] + intersection);
+                    Vector2 dir = s.unit();
+                    double diff = vertices[v] * dir - intersection * dir + .01;
+
+                    players[i].x -= (dir * diff).x;
+                    players[i].y -= (dir * diff).y;
                 }
             }
         }
 
         // Check paddle for collision with neighboring paddles.
         // This only runs for every other paddle.
-        for (int j = -1; (i % 2 == 0) && (j < 2); j += 2) {
+        for (int j = -1; (i % 2 == 0) && (j + (int)i < (int)players.size()) && (j < 2); j += 2) {
             Entity &other = players[(players.size()+j+(int)i)%players.size()];
             std::vector<Vector2> projections;
+
             if (players[i].collide(other, &projections)) {
-                std::cout << "bonk between " << i << " and " << j+(int)i << std::endl;
-
-                std::cout << "projections: ";
-                for (auto proj = projections.begin(); proj < projections.end(); ++proj)
-                    std::cout << *proj << " ";
-                std::cout << std::endl;
-
-                std::cout << "unit: ";
-                for (auto proj = projections.begin(); proj < projections.end(); ++proj)
-                    std::cout << proj->unit() << " ";
-                std::cout << std::endl;
-
                 Vector2 axis1 = (players[i].getVertices()[0] - players[i].getVertices()[3]).unit();
                 Vector2 axis2 = (other.getVertices()[0] - other.getVertices()[3]).unit();
 
-                std::cout << "axis1 " << axis1 << "; axis2 " << axis2 << std::endl;
-
                 Vector2 projected;
-                Vector2 proj1;
-                Vector2 proj2;
 
                 for (auto proj = projections.begin(); proj < projections.end(); ++proj) {
-                    if ((proj->unit() - axis1).length() < (proj1.unit() - axis1).length())
-                        proj1 = *proj;
-                    if ((proj->unit() - axis2).length() < (proj2.unit() - axis2).length())
-                        proj2 = *proj;
                     if (projected.length() == 0 || proj->length() < projected.length())
                         projected = *proj;
                 }
 
-                std::cout << "projected: " << projected << "; unit: " << projected.unit() << std::endl;
+                Vector2 proj1(0, 0), proj2(0, 0);
 
-                if ((projected.unit() * axis1) != 0)
-                    proj1 = fabs(projected.length() / (projected.unit() * axis1)) * axis1;
-                else
-                    proj1 = axis1 * (projected * axis1);
-                std::cout << "(projected.length() / (projected.unit() * axis1)) = " << (projected.length() / (projected.unit() * axis1)) << std::endl;
+                bool perpendicular1 = fabs(projected * axis1) < 0.0000000001;
+                bool perpendicular2 = fabs(projected * axis2) < 0.0000000001;
 
-                std::cout << "(projected.unit() * axis2) = " << (projected.unit() * axis2) << std::endl;
-                if ((projected.unit() * axis2) != 0)
-                    proj2 = fabs(projected.length() / (projected.unit() * axis2)) * axis2;
-                else
-                    proj2 = axis2 * (projected * axis2);
+                if (!perpendicular1)
+                    proj1 = projected.length() / fabs(projected.unit() * axis1) * axis1;
 
-                std::cout << "proj1 " << proj1 << "; proj2 " << proj2 << std::endl;
+                if (!perpendicular2)
+                    proj2 = projected.length() / fabs(projected.unit() * axis2) * axis2;
 
-                double playerV = fabs(players[i].v * axis1 * projected.unit());
-                double otherV = fabs(other.v * axis2 * projected.unit());
+                assert(!(isnan(proj1.x) || isnan(proj1.y) || isnan(proj2.x) || isnan(proj2.y)));
+
+                Vector2 movement1(cos(players[i].theta), sin(players[i].theta)), movement2(cos(other.theta), sin(other.theta));
+
+                double playerV = std::max(0.0, fabs(axis1 * projected.unit()) * movement1 * axis1 * players[i].v * (j > 0 ? 1 : -1));
+                double otherV = std::max(0.0, fabs(axis2 * projected.unit()) * movement2 * axis2 * other.v * (j > 0 ? -1 : 1));
                 double totalV = playerV + otherV;
-                std::cout << playerV << " + " << otherV << " = " << totalV << std::endl;
+
+                // This prevents NaN from popping up below; it should
+                // only execute when we also execute 
+                if (totalV == 0) {
+                    totalV = 2;
+                    if (!perpendicular1 && !perpendicular2) {
+                        // This should never happen.
+                        // But after maybe 7 hours of the game running
+                        // continuously, as per a test executable that
+                        // was set to just run this simulation with no
+                        // window as fast as possible (~84x regular
+                        // speed), it can apparently happen. So this
+                        // deals with it.
+                        playerV = otherV = 1;
+                    }
+                }
 
                 if (j > 0)
                     proj1 *= -1;
@@ -247,19 +243,68 @@ void SharedState::update(std::vector<int> inputs) {
                 proj1 *= playerV / totalV * 1.01;
                 proj2 *= otherV / totalV * 1.01;
 
-                std::cout << "NEW proj1 " << proj1 << "; proj2 " << proj2 << std::endl;
+                assert(!(isnan(proj1.x) || isnan(proj1.y) || isnan(proj2.x) || isnan(proj2.y)));
 
+                // Might be good to replace Entity.x/y with a position
+                // vector; it'd make this two whole lines shorter!
                 players[i].x += proj1.x;
                 players[i].y += proj1.y;
                 other.x += proj2.x;
                 other.y += proj2.y;
 
-                if ((projected.unit() * axis1) != 0)
+                if (players[i].collide(other, &projections)) {
+                    // This handles the case in which the shortest
+                    // projection was perpendicular to one of the
+                    // paddles' movement axes, and yet that paddle was
+                    // moving (which occurs when the paddle would've
+                    // hit the other paddle's short edge, but moved
+                    // too much in a single step, instead resulting in
+                    // the other paddle "hitting" the first one's
+                    // broad side).
+
+                    if (perpendicular1)
+                        projected = projections[3];
+                    else if (perpendicular2)
+                        projected = projections[1];
+                    else
+                        assert(false);
+
+                    proj1 = fabs(projected.length() / (projected.unit() * axis1)) * axis1;
+                    proj2 = fabs(projected.length() / (projected.unit() * axis2)) * axis2;
+
+                    playerV = std::max(0.0, fabs(axis1 * projected.unit()) * movement1 * axis1 * players[i].v * (j > 0 ? 1 : -1));
+                    otherV = std::max(0.0, fabs(axis2 * projected.unit()) * movement2 * axis2 * other.v * (j > 0 ? -1 : 1));
+                    totalV = playerV + otherV;
+
+                    assert(totalV != 0);
+
+                    if (j > 0)
+                        proj1 *= -1;
+                    else
+                        proj2 *= -1;
+
+                    proj1 *= playerV / totalV * 1.01;
+                    proj2 *= otherV / totalV * 1.01;
+
+                    assert(!(isnan(proj1.x) || isnan(proj1.y) || isnan(proj2.x) || isnan(proj2.y)));
+
+                    players[i].x += proj1.x;
+                    players[i].y += proj1.y;
+                    other.x += proj2.x;
+                    other.y += proj2.y;
+
+                    assert(!players[i].collide(other));
+                }
+
+                if (playerV > 0.0000000001)
                     players[i].v = 0;
-                if ((projected.unit() * axis2) != 0)
+                if (otherV > 0.0000000001)
                     other.v = 0;
             }
         }
+
+        if (haltPlayer)
+            players[i].v = 0;
     }
 
     Entity oldBall(ball);
