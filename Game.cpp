@@ -12,17 +12,19 @@ Texture Game::whiteTexture;
 // classic and demo are false by default (see Game.h).
 Game::Game(GameManager *m, std::vector<PaddleInput *> inputs, int wallsPerPlayer, bool classic, bool demo)
     : GameState(m), state(this), inputs(inputs), server(NULL), networked(false), classic(classic), demo(demo) {
-    setupTextures();
+    setupStatic();
 
     if (classic)
         state.resetClassic();
     else
         state.reset(inputs.size(), wallsPerPlayer);
+
+    setupTextures();
 }
 
 Game::Game(GameManager *m, PaddleInput *input, const char *host)
     : GameState(m), inputs{input}, server(NULL), networked(true), demo(false) {
-    setupTextures();
+    setupStatic();
 
     IPaddress ip;
     if (SDLNet_ResolveHost(&ip, host, 5556) != 0) {
@@ -73,6 +75,8 @@ Game::Game(GameManager *m, PaddleInput *input, const char *host)
     else
         state.reset(numPlayers, wallsPerPlayer);
 
+    setupTextures();
+
     for (auto &player : state.players) {
         player.x = server->getDouble();
         player.y = server->getDouble();
@@ -90,6 +94,83 @@ Game::~Game() {
 }
 
 void Game::setupTextures() {
+    SDL_Texture *target = SDL_CreateTexture(m->renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, m->WIDTH, m->HEIGHT);
+    SDL_SetRenderTarget(m->renderer, target);
+
+    double distToCenter = state.centerY;
+    if (state.boundaries.size() % 2 == 0)
+        distToCenter = m->HEIGHT / (2 * cos(pi / state.boundaries.size()));
+
+    SDL_SetRenderDrawColor(m->renderer, 0, 0, 0, 0xff);
+    SDL_RenderClear(m->renderer);
+    SDL_SetRenderDrawColor(m->renderer, 0xff, 0xff, 0xff, 0xff);
+
+    double w = 32 * state.scale, h = 12 * state.scale, total = w + 14 * state.scale;
+    if (classic) {
+        for (int b = 0; b <= m->HEIGHT / total; b++)
+            whiteTexture.render(m->renderer, (m->WIDTH-h)/2, (int)round(b * total), (int)round(h), (int)round(w));
+    } else {
+        whiteTexture.setColorMod(0x88, 0x88, 0x88);
+        for (unsigned int i = 0; i < state.boundaries.size(); i++) {
+            Vector2 start = state.boundaries[i];
+            Vector2 end = state.boundaries[(i + 1) % state.boundaries.size()];
+            double angle = atan2((end-start).y, (end-start).x);
+            angle += pi/2 - pi / state.boundaries.size();
+            double x = start.x + w/2 * cos(angle) - w/2;
+            double y = start.y + w/2 * sin(angle) - h/2;
+            for (int b = 0; b <= (int)(distToCenter / total); b++) {
+                whiteTexture.render(m->renderer, (int)round(x), (int)round(y), (int)round(w), (int)round(h), angle * 180/pi);
+                x += total * cos(angle);
+                y += total * sin(angle);
+            }
+        }
+        whiteTexture.setColorMod(0xff, 0xff, 0xff);
+    }
+
+    SDL_SetRenderTarget(m->renderer, NULL);
+    background = Texture(target);
+
+    Uint32 rmask, gmask, bmask, amask;
+
+    // This is annoying, but seemingly necessary since an amask of 0
+    // means no real transparency, and a non-zero amask appears to
+    // preclude having default r/g/bmask values of 0.
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+    rmask = 0xff000000;
+    gmask = 0x00ff0000;
+    bmask = 0x0000ff00;
+    amask = 0x000000ff;
+#else
+    rmask = 0x000000ff;
+    gmask = 0x0000ff00;
+    bmask = 0x00ff0000;
+    amask = 0xff000000;
+#endif
+
+    SDL_Surface *overlaySurf = SDL_CreateRGBSurface(0, m->WIDTH, m->HEIGHT, 32, rmask, gmask, bmask, amask);
+
+    for (int x = 0; x < m->WIDTH; x++) {
+        for (int y = 0; y < m->HEIGHT; y++) {
+            bool interior = true;
+            for (unsigned int i = 0; i < state.boundaries.size(); i++) {
+                Vector2 start = state.boundaries[i];
+                Vector2 end = state.boundaries[(i + 1) % state.boundaries.size()];
+                if (((end.x-start.x)*(y-start.y) - (end.y-start.y)*(x-start.x)) < -500) {
+                    interior = false;
+                    break;
+                }
+            }
+
+            if (!interior)
+                ((Uint32 *)overlaySurf->pixels)[y*m->WIDTH+x] = amask;
+        }
+    }
+
+    overlay = Texture::fromSurface(m->renderer, overlaySurf);
+    SDL_FreeSurface(overlaySurf);
+}
+
+void Game::setupStatic() {
     if (whiteTexture.empty()) {
         SDL_Surface *surface = SDL_CreateRGBSurface(0, 1, 1, 32, 0, 0, 0, 0);
         SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0xff, 0xff, 0xff));
@@ -173,7 +254,7 @@ void renderEntity(SDL_Renderer *renderer, Texture &texture, const Entity &entity
 }
 
 void Game::render(double lag) {
-    m->background.render(m->renderer, 0, 0);
+    background.render(m->renderer, 0, 0);
 
     char buf[21]; // Max number of characters for a 64-bit int in base 10.
     Texture score;
@@ -222,4 +303,8 @@ void Game::render(double lag) {
     points[state.boundaries.size()].y = round(state.boundaries[0].y);
 
     SDL_RenderDrawLines(m->renderer, points, state.boundaries.size()+1);
+
+    SDL_SetRenderDrawBlendMode(m->renderer, SDL_BLENDMODE_BLEND);
+    overlay.render(m->renderer, 0, 0);
+    SDL_SetRenderDrawBlendMode(m->renderer, SDL_BLENDMODE_NONE);
 }

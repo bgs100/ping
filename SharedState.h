@@ -15,6 +15,7 @@ public:
     Entity ball;
     StateListener *listener;
     int collided;
+    double centerY, scale;
 
     SharedState(StateListener *listener=NULL);
     SharedState(int numPlayers, int wallsPerPlayer, StateListener *listener=NULL);
@@ -28,10 +29,6 @@ public:
 
     int playerToBoundaryIndex(int playerIndex) const;
     int boundaryToPlayerIndex(int boundaryIndex) const;
-
-private:
-    double centerY;
-    double scale;
 };
 
 #endif

@@ -26,6 +26,7 @@ public:
 private:
     static Texture whiteTexture;
 
+    Texture background, overlay;
     SharedState state;
     std::vector<PaddleInput *> inputs;
     Socket *server;
@@ -33,6 +34,7 @@ private:
     int playerNum;
     bool classic, demo;
 
+    void setupStatic();
     void setupTextures();
     void errorScreen(const char *msg);
     void handleInput();

@@ -82,7 +82,7 @@ SetupState::Selection SetupState::getSelected(int x, int y) {
     if (pointInRect(x, y, { (m->WIDTH - startText.w) / 2, START_BUTTON_Y, startText.w, startText.h }))
         return { START, 0 };
 
-    if (x >= start + len || (x - start) % (BOX_W + SPACING) >= BOX_W)
+    if (x < start || x >= start + len || (x - start) % (BOX_W + SPACING) >= BOX_W)
         return { NONE, 0 };
 
     int selectedBox = (x - start) / (BOX_W + SPACING);
@@ -167,6 +167,10 @@ void SetupState::handleEvent(SDL_Event &event) {
         } else if (selection.button == CLOSE) {
             delete players[selection.index].input;
             players.erase(players.begin() + selection.index);
+            if (players.size() == 2 && wallsPerPlayer < 2) {
+                wallsPerPlayer = 2;
+                updateWPPTexture();
+            }
         } else if (selection.button == DIFFICULTY) {
             AIInput &input = *((AIInput *)players[selection.index].input);
             input.difficulty = (AIInput::Difficulty)((input.difficulty + 1) % AIInput::NUM_DIFFICULTY);

@@ -55,6 +55,13 @@ void Texture::render(SDL_Renderer *renderer, int x, int y) {
     SDL_RenderCopy(renderer, texture, NULL, &dst);
 }
 
+void Texture::render(SDL_Renderer *renderer, int x, int y, int w, int h) {
+    if (texture == NULL)
+        return;
+    SDL_Rect dst = { x, y, w, h };
+    SDL_RenderCopy(renderer, texture, NULL, &dst);
+}
+
 void Texture::render(SDL_Renderer *renderer, int srcX, int srcY, int w, int h, int dstX, int dstY) {
     if (texture == NULL)
         return;

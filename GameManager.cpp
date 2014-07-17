@@ -32,18 +32,6 @@ bool GameManager::init() {
     if (renderer == NULL)
         return SDLerror("SDL_CreateRenderer");
 
-    SDL_Surface *tmp = SDL_CreateRGBSurface(0, WIDTH, HEIGHT, 32, 0, 0, 0, 0);
-    if (tmp == NULL)
-        return SDLerror("SDL_CreateRGBSurface");
-
-    for (int i = 0; i * 46 < HEIGHT; i++) {
-        SDL_Rect line = { WIDTH/2 - 6, i * 46, 12, 32 };
-        SDL_FillRect(tmp, &line, SDL_MapRGB(tmp->format, 0xff, 0xff, 0xff));
-    }
-
-    background = Texture::fromSurface(renderer, tmp);
-    SDL_FreeSurface(tmp);
-
     for (int i = 0; i < SIZE_END; i++) {
         fonts[FONT_RND][i] = TTF_OpenFont("kenpixel.ttf", fontSizes[i]);
         if (fonts[FONT_RND][i] == NULL)

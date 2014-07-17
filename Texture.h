@@ -21,8 +21,9 @@ public:
     void setColorMod(Uint8 r, Uint8 g, Uint8 b);
 
     void render(SDL_Renderer *renderer, int x, int y);
+    void render(SDL_Renderer *renderer, int x, int y, int w, int h);
     void render(SDL_Renderer *renderer, int srcX, int srcY, int w, int h, int dstX, int dstY);
-    void render(SDL_Renderer *renderer, int x, int, double angle);
+    void render(SDL_Renderer *renderer, int x, int y, double angle);
     void render(SDL_Renderer *renderer, int x, int y, int w, int h, double angle);
 
     int w, h;
