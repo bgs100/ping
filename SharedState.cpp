@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <assert.h>
+#include <math.h>
 #include "SharedState.h"
 #include "GameManager.h"
 #include "utility.h"
@@ -172,7 +173,7 @@ void SharedState::update(std::vector<int> inputs) {
                     Vector2 q = vertices[other];
                     Vector2 s = vertices[v] - q;
                     
-                    double u = (q - p).cross(r) / (r.cross(s));
+                    double u = (q - p).cross(r) / r.cross(s);
                     Vector2 intersection = q + u * s;
                     Vector2 dir = s.unit();
                     double diff = vertices[v] * dir - intersection * dir + .01;

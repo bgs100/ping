@@ -1,8 +1,6 @@
 #include <algorithm>
 #include "Textbox.h"
 
-#include <iostream>
-
 Textbox::Textbox(TTF_Font *font, int x, int y, int w)
     : font(font), x(x), y(y), w(w), h(TTF_FontHeight(font)), renderText(false), pos(0), offsetX(0) {
     SDL_StartTextInput();

@@ -7,46 +7,16 @@ const char *AIInput::DIFFICULTY_STRS[] = { "Easy", "Medium", "Hard" };
 
 AIInput::AIInput(Difficulty difficulty): difficulty(difficulty) {}
 
-bool movingToward(const Entity &ball, double x) {
-    return (ball.x < x && ball.getDX() > 0) || (ball.x > x && ball.getDX() < 0);
-}
-
-// Predict the ball's state when it reaches the vertical line at x (a
-// paddle goal line).
-Entity predict(Entity ball, double x) {
-    double predictedY = ball.getSlope() * (x - ball.x) + ball.y;
-    while (predictedY < 0 || predictedY + ball.h > GameManager::HEIGHT) {
-        if (predictedY < 0) {
-            ball.x = -ball.y / ball.getSlope() + ball.x;
-            ball.y = 0;
-        } else {
-            ball.x = (GameManager::HEIGHT - ball.h - ball.y) / ball.getSlope() + ball.x;
-            ball.y = GameManager::HEIGHT - ball.h;
-        }
-        ball.theta = 2*pi - ball.theta;
-        predictedY = ball.getSlope() * (x - ball.x) + ball.y;
-    }
-
-    ball.x = x;
-    ball.y = predictedY;
-    return ball;
-}
-
 int AIInput::update(SharedState &state, int playerNum) {
-    // TODO: Finish updating AI code for polypong.
-
-    if (difficulty > MEDIUM)
-        return 0;
-
     Entity &player = state.players[playerNum];
     Vector2 dir(cos(player.theta), sin(player.theta));
     Vector2 playerMid((player.getVertices()[1] + player.getVertices()[2]) / 2);
-    Vector2 ballMid((state.ball.getVertices()[0] + state.ball.getVertices()[2]) / 2);
+    Vector2 ballMid(state.ball.getCenter());
     double playerPos = playerMid * dir;
     double predictedPos, time;
 
     if (difficulty == EASY) {
-        predictedPos = ((state.ball.getVertices()[0] + state.ball.getVertices()[2]) / 2) * dir;
+        predictedPos = ballMid * dir;
         time = 6;
     } else if (difficulty == MEDIUM) {
         Vector2 ballDir(cos(state.ball.theta), sin(state.ball.theta));
@@ -57,6 +27,60 @@ int AIInput::update(SharedState &state, int playerNum) {
         } else {
             predictedPos = playerPos;
             time = 1;
+        }
+    } else if (difficulty == HARD) {
+        Entity ball(state.ball);
+        bool found = false;
+        int targetBoundary = state.playerToBoundaryIndex(playerNum);
+        time = 0;
+
+        // Simulate 50 bounces, max.
+        for (int c = 0; !found && c < 50; c++) {
+            predictedPos = playerPos;
+
+            std::vector<Vector2> qs = ball.getVertices();
+            Vector2 s(cos(ball.theta), sin(ball.theta));
+
+            int minVertex = -1;
+            int minBoundary = -1;
+            double min = 1.0 / 0.0;
+            
+            for (unsigned int i = 0; i < state.boundaries.size(); i++) {
+                Vector2 p = state.boundaries[(state.boundaries.size()+(int)i-1)%state.boundaries.size()];
+                Vector2 r = state.boundaries[i] - p;
+                if (state.boundaryToPlayerIndex(i) != -1)
+                    p += 40 * state.scale * Vector2(-r.unit().y, r.unit().x);
+
+
+                if (r.cross(s) == 0)
+                    continue;
+
+                for (int v = 0; v < 4; v++) {
+                    double t = (qs[v] - p).cross(s) / r.cross(s);
+                    double u = (qs[v] - p).cross(r) / r.cross(s);
+                    if (t >= 0 && t <= 1 && u > 0 && u < min) {
+                        minVertex = v;
+                        minBoundary = i;
+                        min = u;
+                    }
+                }
+            }
+
+            if (minVertex == -1)
+                break;
+
+            Vector2 r(state.boundaries[minBoundary] - state.boundaries[(state.boundaries.size()+minBoundary-1)%state.boundaries.size()]);
+            
+            time += min / ball.v;
+            Vector2 bounce = qs[minVertex] + min * s;
+            ball.setCenter(ball.getCenter() - qs[minVertex] + bounce);
+            ball.theta = 2*atan2(r.y, r.x) - ball.theta;
+            
+            if (minBoundary == targetBoundary) {
+                found = true;
+                predictedPos = ball.getCenter() * dir;
+                break;
+            }
         }
     }
 
