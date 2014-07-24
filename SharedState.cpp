@@ -26,6 +26,7 @@ void SharedState::resetBall() {
     ball.w = ball.h = 20 * scale;
     ball.x = GameManager::WIDTH/2 - ball.w/2;
     ball.y = centerY;
+    ball.orientation = ballRotation = 0;
     int boundaryIndex = playerToBoundaryIndex(rand() % players.size()) - 1;
     Vector2 &boundary = boundaries[(boundaries.size() + boundaryIndex) % boundaries.size()];
     double startAngle = atan2(boundary.y - ball.y, boundary.x - ball.x);
@@ -73,10 +74,10 @@ void SharedState::reset(int numPlayers, int wallMult) {
 
     double sideLength;
     if (numWalls % 2 == 0) {
-        centerY = GameManager::HEIGHT / 2;
-        sideLength = GameManager::HEIGHT * tan(pi / numWalls);
+        centerY = (GameManager::HEIGHT - 1) / 2;
+        sideLength = (GameManager::HEIGHT - 1) * tan(pi / numWalls);
     } else {
-        centerY = GameManager::HEIGHT / (1 + cos(pi / numWalls));
+        centerY = (GameManager::HEIGHT - 1) / (1 + cos(pi / numWalls));
         sideLength = centerY * 2 * sin(pi / numWalls);
     }
 
@@ -270,9 +271,18 @@ void SharedState::update(std::vector<int> inputs) {
                     else
                         assert(false);
 
-                    proj1 = fabs(projected.length() / (projected.unit() * axis1)) * axis1;
-                    proj2 = fabs(projected.length() / (projected.unit() * axis2)) * axis2;
-
+                    proj1 = Vector2(0, 0);
+                    proj2 = Vector2(0, 0);
+                    
+                    perpendicular1 = fabs(projected * axis1) < 0.0000000001;
+                    perpendicular2 = fabs(projected * axis2) < 0.0000000001;
+                    
+                    if (!perpendicular1)
+                        proj1 = projected.length() / fabs(projected.unit() * axis1) * axis1;
+                    
+                    if (!perpendicular2)
+                        proj2 = projected.length() / fabs(projected.unit() * axis2) * axis2;
+                    
                     playerV = std::max(0.0, fabs(axis1 * projected.unit()) * movement1 * axis1 * players[i].v * (j > 0 ? 1 : -1));
                     otherV = std::max(0.0, fabs(axis2 * projected.unit()) * movement2 * axis2 * other.v * (j > 0 ? -1 : 1));
                     totalV = playerV + otherV;
@@ -310,6 +320,7 @@ void SharedState::update(std::vector<int> inputs) {
 
     Entity oldBall(ball);
     ball.update();
+    ball.orientation += ballRotation;
 
     // TODO: Re-add phasing fix, possibly with line (from paddle
     // sides) and OBB intersection check (project ball and line on to
@@ -318,14 +329,25 @@ void SharedState::update(std::vector<int> inputs) {
     bool anyCollision = false;
 
     for (unsigned int i = 0; i < players.size(); i++) {
-        bool collision = ball.collide(players[i]);
+        std::vector<Vector2> projections;
+        bool collision = ball.collide(players[i], &projections);
         anyCollision |= collision;
 
         if ((collided == -1 || collided != (int)i) && collision) {
             if (listener != NULL)
                 listener->onHit();
-            ball.theta = 2*players[i].theta - ball.theta;
-            ball.setDelta(ball.getDX() + players[i].getDX() / 2, ball.getDY() + players[i].getDY() / 2);
+            if (projections[3].length() < projections[2].length())
+                ball.theta = ball.theta + pi;
+            else 
+                ball.theta = 2*players[i].theta - ball.theta;
+            Vector2 ballDir(cos(ball.theta), sin(ball.theta));
+            Vector2 playerDir(cos(players[i].theta), sin(players[i].theta));
+            double change = ballDir * playerDir * players[i].v / 80;
+            ballRotation = fmod(ballRotation + change, pi/2);
+            if (projections[3].length() < projections[2].length())
+                ball.setDelta(ball.getDX() + players[i].getDX(), ball.getDY() + players[i].getDY());
+            else
+                ball.setDelta(ball.getDX() + players[i].getDX() / 2, ball.getDY() + players[i].getDY() / 2);
             ball.v *= 1.1;
             collided = i;
         }

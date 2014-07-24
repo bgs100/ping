@@ -16,6 +16,7 @@ public:
     StateListener *listener;
     int collided;
     double centerY, scale;
+    double ballRotation;
 
     SharedState(StateListener *listener=NULL);
     SharedState(int numPlayers, int wallsPerPlayer, StateListener *listener=NULL);

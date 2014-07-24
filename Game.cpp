@@ -289,7 +289,9 @@ void Game::render(double lag) {
         SDL_SetRenderDrawColor(m->renderer, 0, 0xff, 0, 0);
         SDL_RenderDrawPoint(m->renderer, p->getVertices()[2].x,  p->getVertices()[2].y);
     }
-    renderEntity(m->renderer, whiteTexture, state.ball, lag);
+    Entity ball(state.ball);
+    ball.orientation += lag * state.ballRotation;
+    renderEntity(m->renderer, whiteTexture, ball, lag);
 
     SDL_SetRenderDrawColor(m->renderer, 0xff, 0xff, 0xff, 0xff);
 
